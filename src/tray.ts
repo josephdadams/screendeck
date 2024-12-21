@@ -51,7 +51,7 @@ function updateTrayMenu() {
             label: 'Quit',
             type: 'normal',
             click: () => {
-                app.quit()
+                app.exit()
             },
         },
     ] as Electron.MenuItemConstructorOptions[]
