@@ -63,6 +63,8 @@ export function createDeviceWindow(deviceId: string) {
         skipTaskbar: true,
         movable: movable,
         hasShadow: false,
+        fullscreenable: false,
+        focusable: true,
         title: `ScreenDeck - ${deviceId}`,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),

@@ -283,7 +283,8 @@ window.addEventListener('DOMContentLoaded', () => {
         menu.style.position = 'fixed'
         menu.innerHTML = `
     <div class="menu-item" data-action="encoder">Set to Encoder Mode</div>
-    <div class="menu-item" data-action="button">Set to Button Mode</div>
+    <div class="menu-item" data-action="button">Set to Button Mode (Normal)</div>
+    <div class="menu-item" data-action="button-sticky">Set to Sticky Button Mode</div>
     <div class="menu-item" data-action="hotkey">Assign Hotkey...</div>
     `
 
@@ -334,6 +335,14 @@ window.addEventListener('DOMContentLoaded', () => {
                         deviceId,
                         keyIndex,
                         config: { isEncoder: false },
+                    })
+                    .then(() => refreshKey(deviceId, keyIndex))
+            } else if (action === 'button-sticky') {
+                window.electronAPI
+                    .invoke('updateKeyConfig', {
+                        deviceId,
+                        keyIndex,
+                        config: { isEncoder: false, isSticky: true },
                     })
                     .then(() => refreshKey(deviceId, keyIndex))
             } else if (action === 'hotkey') {
@@ -394,6 +403,13 @@ window.addEventListener('DOMContentLoaded', () => {
                     keyElement.classList.remove('encoder')
                 }
 
+                // Update sticky class
+                if (keyConfig.sticky) {
+                    keyElement.classList.add('sticky')
+                } else {
+                    keyElement.classList.remove('sticky')
+                }
+
                 // Rebind mousedown event
                 keyElement.replaceWith(keyElement.cloneNode(true))
                 const newKeyElement = document.querySelector(
@@ -410,50 +426,23 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function bindKeyEvents(key, i, keyConfig) {
+        const isEncoder = keyConfig.isEncoder
+        const stepSize = keyConfig.stepSize || 10
+
         key.addEventListener('mousedown', (e) => {
-            console.log('in mouse down for key:', i)
             if (e.button === 2) {
                 return
             }
 
-            const isEncoder = keyConfig.isEncoder
-            const stepSize = keyConfig.stepSize || 10
-
-            console.log('isEncoder:', isEncoder, 'stepSize:', stepSize)
-
             if (isEncoder) {
                 e.preventDefault()
 
-                let accumulatedDeltaX = 0
                 let lastX = e.clientX
 
                 const onMove = (moveEvent) => {
                     const deltaX = moveEvent.clientX - lastX
-                    accumulatedDeltaX += deltaX
-
-                    let direction = null
-                    while (Math.abs(accumulatedDeltaX) >= stepSize) {
-                        direction =
-                            accumulatedDeltaX > 0 ? 'rotateRight' : 'rotateLeft'
-                        sendKeyPress(i, direction)
-
-                        if (accumulatedDeltaX > 0) {
-                            accumulatedDeltaX -= stepSize
-                        } else {
-                            accumulatedDeltaX += stepSize
-                        }
-                    }
-
-                    if (direction) {
-                        key.classList.add(direction)
-                        key.classList.remove(
-                            direction === 'rotateRight'
-                                ? 'rotateLeft'
-                                : 'rotateRight'
-                        )
-                    }
-
                     lastX = moveEvent.clientX
+                    handleDirection(deltaX)
                 }
 
                 const onUp = () => {
@@ -462,6 +451,9 @@ window.addEventListener('DOMContentLoaded', () => {
                     key.classList.remove('rotateLeft', 'rotateRight')
                 }
 
+                window.addEventListener('mouseenter', () => {
+                    window.focus()
+                })
                 window.addEventListener('mousemove', onMove)
                 window.addEventListener('mouseup', onUp)
             } else {
@@ -475,8 +467,49 @@ window.addEventListener('DOMContentLoaded', () => {
             sendKeyPress(i, 'up')
         })
 
+        const onWheel = (wheelEvent) => {
+            wheelEvent.preventDefault()
+            const delta = wheelEvent.deltaY > 0 ? stepSize : -stepSize
+            handleDirection(delta)
+        }
+
+        key.addEventListener('wheel', onWheel, { passive: false })
+
         // Add context menu again
         key.addEventListener('contextmenu', (e) => showContextMenu(e, i))
+
+        let accumulatedDeltaX = 0
+
+        let scrollResetTimeout = null
+
+        const handleDirection = (delta) => {
+            let direction = null
+            accumulatedDeltaX += delta
+
+            while (Math.abs(accumulatedDeltaX) >= stepSize) {
+                direction = accumulatedDeltaX > 0 ? 'rotateRight' : 'rotateLeft'
+                sendKeyPress(i, direction)
+
+                if (accumulatedDeltaX > 0) {
+                    accumulatedDeltaX -= stepSize
+                } else {
+                    accumulatedDeltaX += stepSize
+                }
+            }
+
+            if (direction) {
+                key.classList.add(direction)
+                key.classList.remove(
+                    direction === 'rotateRight' ? 'rotateLeft' : 'rotateRight'
+                )
+
+                // Reset rotation after a short delay
+                clearTimeout(scrollResetTimeout)
+                scrollResetTimeout = setTimeout(() => {
+                    key.classList.remove('rotateLeft', 'rotateRight')
+                }, 250)
+            }
+        }
     }
 
     function closeContextMenu() {

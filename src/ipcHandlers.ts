@@ -25,7 +25,10 @@ export function initializeIpcHandlers() {
         const movable = store.get(`device.${deviceId}.movable`, true)
         const disablePress = store.get(`device.${deviceId}.disablePress`, false)
         const autoHide = store.get(`device.${deviceId}.autoHide`, false)
-        const hideEmptyKeys = store.get(`device.${deviceId}.hideEmptyKeys`, false)
+        const hideEmptyKeys = store.get(
+            `device.${deviceId}.hideEmptyKeys`,
+            false
+        )
         const backgroundColor = store.get(
             `device.${deviceId}.backgroundColor`,
             '#000000'
@@ -114,6 +117,10 @@ export function initializeIpcHandlers() {
                 `device.${deviceId}.key.${keyIndex}.stepSize`,
                 10
             ),
+            isSticky: store.get(
+                `device.${deviceId}.key.${keyIndex}.isSticky`,
+                false
+            ),
         }
     })
 
@@ -122,8 +129,10 @@ export function initializeIpcHandlers() {
         (_event, { deviceId, keyIndex, config }) => {
             const isEncoder = config.isEncoder ?? false
             const stepSize = config.stepSize ?? 10
+            const isSticky = config.isSticky ?? false
             store.set(`device.${deviceId}.key.${keyIndex}.isEncoder`, isEncoder)
             store.set(`device.${deviceId}.key.${keyIndex}.stepSize`, stepSize)
+            store.set(`device.${deviceId}.key.${keyIndex}.isSticky`, isSticky)
         }
     )
 

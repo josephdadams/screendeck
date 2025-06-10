@@ -10,6 +10,15 @@ body {
     background: transparent;
 }
 
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    pointer-events: auto;
+    background-color: transparent;
+}
+
 /* Draggable area that encapsulates the keypad */
 .draggable-area {
     width: 100%;
@@ -384,4 +393,9 @@ input[type='color'] {
 #keypad {
     opacity: 1;
     pointer-events: auto;
+}
+
+.key {
+    pointer-events: auto;
+    overscroll-behavior: contain;
 }
