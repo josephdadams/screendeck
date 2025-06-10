@@ -206,6 +206,7 @@ function updateTrayMenu() {
                 // Destroy the tray
                 if (tray) {
                     tray.destroy()
+                    tray = null
                 }
 
                 // Quit the app
