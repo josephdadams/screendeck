@@ -1,6 +1,5 @@
 import { Tray, Menu, nativeImage, app } from 'electron'
 import * as path from 'path'
-import Store from 'electron-store'
 import createSettingsWindow from './settings' // Import the createSettingsWindow function
 import {
     loadProfile,
@@ -11,9 +10,9 @@ import {
 import { ProfilesStore } from './types' // Import the ProfilesStore type
 
 import { unregisterAllHotkeys } from './hotkeys' // Import hotkey management functions
+import { store } from './store'
 
 let tray: Tray | null = null
-const store = new Store()
 
 export default function createTray() {
     // Create the tray icon using nativeImage and resize it to the desired size

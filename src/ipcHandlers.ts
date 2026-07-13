@@ -1,7 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import * as path from 'path'
-import Store from 'electron-store'
-import { defaultSettings } from './defaults'
 import { createSatellite, getNextProfileName } from './utils'
 import { updateTrayMenu } from './tray'
 
@@ -13,8 +11,7 @@ import {
     showDeviceLabels,
     resizeWindowForDevice,
 } from './device' // Import the device ID creation function
-
-const store = new Store({ defaults: defaultSettings })
+import { store } from './store'
 
 export function initializeIpcHandlers() {
     ipcMain.handle('getDeviceConfig', (_event, deviceId) => {
