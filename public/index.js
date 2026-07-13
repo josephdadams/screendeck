@@ -637,6 +637,15 @@ window.addEventListener('DOMContentLoaded', () => {
         adjustBrightness(brightness)
     })
 
+    // Handle Companion connection status changes
+    window.electronAPI.onSatelliteStatus((_, status) => {
+        const indicator = document.getElementById('connectionStatus')
+        if (indicator) {
+            indicator.classList.remove('connecting', 'connected', 'disconnected')
+            indicator.classList.add(status)
+        }
+    })
+
     // Close button
     document.getElementById('closeButton').addEventListener('click', () => {
         window.electronAPI.invoke('closeKeypad', deviceId) // Send deviceId so main process knows which to close

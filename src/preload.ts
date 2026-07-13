@@ -65,6 +65,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('lockedState', (event, data) => callback(event, data))
     },
 
+    // Listen for Companion satellite connection status changes
+    onSatelliteStatus: (callback: any) => {
+        ipcRenderer.on('satelliteStatus', (event, status) =>
+            callback(event, status)
+        )
+    },
+
     // Get per-device config (columnCount, rowCount, etc.)
     getDeviceConfig: (deviceId: string) =>
         ipcRenderer.invoke('getDeviceConfig', deviceId),

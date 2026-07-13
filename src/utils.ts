@@ -65,7 +65,23 @@ export function createSatellite() {
 
             updateTrayMenu()
             showWindows()
+
+            global.deviceWindows.forEach((win) => {
+                win.webContents.send('satelliteStatus', 'connected')
+            })
         }, 500)
+    })
+
+    global.satelliteClient.on('connecting', () => {
+        global.deviceWindows.forEach((win) => {
+            win.webContents.send('satelliteStatus', 'connecting')
+        })
+    })
+
+    global.satelliteClient.on('disconnected', () => {
+        global.deviceWindows.forEach((win) => {
+            win.webContents.send('satelliteStatus', 'disconnected')
+        })
     })
 
     global.satelliteClient.on('draw', (data) => {

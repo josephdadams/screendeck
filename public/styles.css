@@ -295,6 +295,34 @@ input[type='color'] {
     display: block;
 }
 
+/* Companion connection status indicator */
+.connection-status {
+    -webkit-app-region: no-drag;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+    z-index: 100;
+    cursor: default;
+    transition: background-color 0.2s ease;
+}
+
+.connection-status.connected {
+    background: #4caf50;
+}
+
+.connection-status.connecting {
+    background: #ffc107;
+}
+
+.connection-status.disconnected {
+    background: #f44336;
+}
+
 .keypad.identify-highlight {
     outline: 3px solid yellow;
     box-shadow: 0 0 30px 10px rgba(255, 255, 0, 0.8);
