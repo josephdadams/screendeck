@@ -356,7 +356,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     .then(() => refreshKey(deviceId, keyIndex))
             } else if (action === 'set-step-size') {
                 window.electronAPI
-                    .invoke('getKeyConfig', { deviceId, keyIndex })
+                    .getKeyConfig({ deviceId, keyIndex })
                     .then((current) => {
                         const input = prompt(
                             'Enter step size (degrees per notch):',
@@ -369,7 +369,7 @@ window.addEventListener('DOMContentLoaded', () => {
                             return
                         }
                         window.electronAPI
-                            .invoke('updateKeyConfig', {
+                            .updateKeyConfig({
                                 deviceId,
                                 keyIndex,
                                 config: {
@@ -382,10 +382,10 @@ window.addEventListener('DOMContentLoaded', () => {
                     })
             } else if (action === 'clear-sticky') {
                 window.electronAPI
-                    .invoke('getKeyConfig', { deviceId, keyIndex })
+                    .getKeyConfig({ deviceId, keyIndex })
                     .then((current) => {
                         window.electronAPI
-                            .invoke('updateKeyConfig', {
+                            .updateKeyConfig({
                                 deviceId,
                                 keyIndex,
                                 config: {
