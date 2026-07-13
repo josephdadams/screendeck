@@ -43,6 +43,13 @@
                 margin-top: 20px;
             }
 
+            .hotkey-error {
+                color: #c0392b;
+                margin: 10px 0;
+                font-size: 0.9em;
+                min-height: 1.2em;
+            }
+
             .close-button-settings {
                 -webkit-app-region: no-drag;
                 position: absolute;
@@ -81,6 +88,7 @@
             placeholder="Enter key (e.g., A, 1)"
         />
         <div class="hotkey-preview" id="hotkeyPreview"></div>
+        <div class="hotkey-error" id="hotkeyError"></div>
 
         <button id="assignHotkey">Assign Hotkey</button>
         <button id="cancel">Cancel</button>

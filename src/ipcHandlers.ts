@@ -5,7 +5,11 @@ import { defaultSettings } from './defaults'
 import { createSatellite, getNextProfileName } from './utils'
 import { updateTrayMenu } from './tray'
 
-import { registerHotkey, unregisterHotkey } from './hotkeys' // Import the hotkey registration function
+import {
+    registerHotkey,
+    unregisterHotkey,
+    unregisterAllHotkeysForDevice,
+} from './hotkeys' // Import the hotkey registration function
 import {
     createNewDevice,
     createDeviceWindow,
@@ -467,6 +471,9 @@ export function initializeIpcHandlers() {
                 store.delete(key as any)
             }
         })
+
+        // Unregister any global hotkeys associated with this device
+        unregisterAllHotkeysForDevice(deviceId)
 
         // Close the window
         const win = global.deviceWindows.get(deviceId)
