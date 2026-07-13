@@ -131,12 +131,24 @@ export function initializeIpcHandlers() {
     ipcMain.handle(
         'updateKeyConfig',
         (_event, { deviceId, keyIndex, config }) => {
-            const isEncoder = config.isEncoder ?? false
-            const stepSize = config.stepSize ?? 10
-            const isSticky = config.isSticky ?? false
-            store.set(`device.${deviceId}.key.${keyIndex}.isEncoder`, isEncoder)
-            store.set(`device.${deviceId}.key.${keyIndex}.stepSize`, stepSize)
-            store.set(`device.${deviceId}.key.${keyIndex}.isSticky`, isSticky)
+            const existing = {
+                isEncoder: store.get(
+                    `device.${deviceId}.key.${keyIndex}.isEncoder`,
+                    false
+                ),
+                stepSize: store.get(
+                    `device.${deviceId}.key.${keyIndex}.stepSize`,
+                    10
+                ),
+                isSticky: store.get(
+                    `device.${deviceId}.key.${keyIndex}.isSticky`,
+                    false
+                ),
+            }
+            const merged = { ...existing, ...config }
+            store.set(`device.${deviceId}.key.${keyIndex}.isEncoder`, merged.isEncoder)
+            store.set(`device.${deviceId}.key.${keyIndex}.stepSize`, merged.stepSize)
+            store.set(`device.${deviceId}.key.${keyIndex}.isSticky`, merged.isSticky)
         }
     )
 
