@@ -76,6 +76,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getDeviceConfig: (deviceId: string) =>
         ipcRenderer.invoke('getDeviceConfig', deviceId),
 
+    // Reset a device's settings back to createNewDevice()'s defaults
+    resetDeviceToDefaults: (deviceId: string) =>
+        ipcRenderer.invoke('resetDeviceToDefaults', deviceId),
+
     // Save settings (if you need it for settings page)
     saveSettings: (newSettings: any) =>
         ipcRenderer.invoke('saveSettings', newSettings),

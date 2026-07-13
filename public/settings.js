@@ -221,6 +221,22 @@ window.addEventListener('DOMContentLoaded', () => {
             })
             actions.appendChild(deleteBtn)
 
+            const resetBtn = document.createElement('button')
+            resetBtn.textContent = 'Reset to Defaults'
+            resetBtn.addEventListener('click', async () => {
+                if (
+                    confirm(
+                        `Reset device ${device.deviceId} to default settings? This will not affect its hotkeys.`
+                    )
+                ) {
+                    await window.electronAPI.resetDeviceToDefaults(
+                        device.deviceId
+                    )
+                    loadDevices() // reload the whole list so displayed values reflect the reset
+                }
+            })
+            actions.appendChild(resetBtn)
+
             container.appendChild(actions)
             deviceList.appendChild(container)
         })

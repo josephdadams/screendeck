@@ -17,6 +17,130 @@ import {
 } from './device' // Import the device ID creation function
 import { store } from './store'
 
+// Applies a partial (or full) device config: saves it to the store, updates
+// the live BrowserWindow, resizes it if needed, and notifies the renderer.
+// Shared by the `updateDeviceConfig` and `resetDeviceToDefaults` handlers.
+function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
+    let needsDeviceUpdate = false
+
+    // Check if key properties have actually changed
+    for (const key of ['columnCount', 'rowCount', 'bitmapSize']) {
+        const oldValue = store.get(`device.${deviceId}.${key}`)
+        const newValue = config[key]
+
+        if (newValue !== undefined && newValue !== oldValue) {
+            needsDeviceUpdate = true
+            break
+        }
+    }
+
+    // Save all config values
+    Object.entries(config).forEach(([key, value]) => {
+        const fullKey = `device.${deviceId}.${key}`
+
+        if (value === undefined) {
+            store.delete(fullKey as any)
+        } else {
+            store.set(fullKey, value)
+        }
+    })
+
+    console.log(`Device ${deviceId} config updated:`, config)
+
+    // Update the BrowserWindow properties
+    const win = global.deviceWindows.get(deviceId)
+    if (win) {
+        if (config.alwaysOnTop !== undefined) {
+            win.setAlwaysOnTop(Boolean(config.alwaysOnTop))
+        }
+        if (config.movable !== undefined) {
+            win.setMovable(Boolean(config.movable))
+        }
+        if (config.disablePress !== undefined) {
+            win.webContents.send('disablePress', Boolean(config.disablePress))
+        }
+        if (config.autoHide !== undefined) {
+            win.webContents.send('autoHide', Boolean(config.autoHide))
+        }
+        if (config.hideEmptyKeys !== undefined) {
+            resizeWindowForDevice(deviceId)
+            win.webContents.send(
+                'hideEmptyKeys',
+                Boolean(config.hideEmptyKeys)
+            )
+        }
+
+        // Resize window if columnCount/rowCount/bitmapSize changed
+        if (needsDeviceUpdate) {
+            const columnCount = store.get(`device.${deviceId}.columnCount`, 8)
+            const rowCount = store.get(`device.${deviceId}.rowCount`, 4)
+            const bitmapSize = store.get(`device.${deviceId}.bitmapSize`, 72)
+
+            const { width, height } = calculateWindowSize(
+                columnCount,
+                rowCount,
+                bitmapSize
+            )
+
+            win.setSize(width, height)
+
+            // If the Satellite client is connected and key properties changed, update the device config
+            if (global.satelliteClient) {
+                global.satelliteClient.removeDevice(deviceId)
+                global.satelliteClient.addDevice(deviceId, 'ScreenDeck', {
+                    columnCount: store.get(
+                        `device.${deviceId}.columnCount`,
+                        8
+                    ),
+                    rowCount: store.get(`device.${deviceId}.rowCount`, 4),
+                    bitmapSize: store.get(
+                        `device.${deviceId}.bitmapSize`,
+                        72
+                    ),
+                    colours: true,
+                    text: true,
+                    brightness: true,
+                    pincodeMap: null,
+                })
+            }
+
+            win.webContents.send('rebuildGrid', {
+                columnCount,
+                rowCount,
+            })
+        }
+
+        // Update background color/opacity *live*
+        if (
+            config.backgroundColor !== undefined ||
+            config.backgroundOpacity !== undefined
+        ) {
+            const backgroundColor = store.get(
+                `device.${deviceId}.backgroundColor`,
+                '#000000'
+            )
+            const backgroundOpacity = store.get(
+                `device.${deviceId}.backgroundOpacity`,
+                0.5
+            )
+
+            console.log('Updating background color/opacity:', {
+                backgroundColor,
+                backgroundOpacity,
+            })
+
+            win.webContents.send('updateBackground', {
+                backgroundColor,
+                backgroundOpacity,
+            })
+        }
+
+        win.show()
+    }
+
+    updateTrayMenu()
+}
+
 export function initializeIpcHandlers() {
     ipcMain.handle('getDeviceConfig', (_event, deviceId) => {
         const columnCount = store.get(`device.${deviceId}.columnCount`, 8)
@@ -339,133 +463,27 @@ export function initializeIpcHandlers() {
     })
 
     ipcMain.handle('updateDeviceConfig', (_event, { deviceId, config }) => {
-        let needsDeviceUpdate = false
+        applyDeviceConfig(deviceId, config)
+    })
 
-        // Check if key properties have actually changed
-        for (const key of ['columnCount', 'rowCount', 'bitmapSize']) {
-            const oldValue = store.get(`device.${deviceId}.${key}`)
-            const newValue = config[key]
-
-            if (newValue !== undefined && newValue !== oldValue) {
-                needsDeviceUpdate = true
-                break
-            }
+    ipcMain.handle('resetDeviceToDefaults', (_event, deviceId) => {
+        // Mirrors the defaults set in device.ts's createNewDevice()
+        const defaultConfig = {
+            columnCount: 8,
+            rowCount: 4,
+            bitmapSize: 72,
+            alwaysOnTop: true,
+            movable: true,
+            disablePress: false,
+            backgroundColor: '#000000',
+            backgroundOpacity: 0.5,
         }
 
-        // Save all config values
-        Object.entries(config).forEach(([key, value]) => {
-            const fullKey = `device.${deviceId}.${key}`
+        applyDeviceConfig(deviceId, defaultConfig)
 
-            if (value === undefined) {
-                store.delete(fullKey as any)
-            } else {
-                store.set(fullKey, value)
-            }
-        })
+        console.log(`Device ${deviceId} reset to defaults.`)
 
-        console.log(`Device ${deviceId} config updated:`, config)
-
-        // Update the BrowserWindow properties
-        const win = global.deviceWindows.get(deviceId)
-        if (win) {
-            if (config.alwaysOnTop !== undefined) {
-                win.setAlwaysOnTop(Boolean(config.alwaysOnTop))
-            }
-            if (config.movable !== undefined) {
-                win.setMovable(Boolean(config.movable))
-            }
-            if (config.disablePress !== undefined) {
-                win.webContents.send(
-                    'disablePress',
-                    Boolean(config.disablePress)
-                )
-            }
-            if (config.autoHide !== undefined) {
-                win.webContents.send('autoHide', Boolean(config.autoHide))
-            }
-            if (config.hideEmptyKeys !== undefined) {
-                resizeWindowForDevice(deviceId)
-                win.webContents.send(
-                    'hideEmptyKeys',
-                    Boolean(config.hideEmptyKeys)
-                )
-            }
-
-            // Resize window if columnCount/rowCount/bitmapSize changed
-            if (needsDeviceUpdate) {
-                const columnCount = store.get(
-                    `device.${deviceId}.columnCount`,
-                    8
-                )
-                const rowCount = store.get(`device.${deviceId}.rowCount`, 4)
-                const bitmapSize = store.get(
-                    `device.${deviceId}.bitmapSize`,
-                    72
-                )
-
-                const { width, height } = calculateWindowSize(
-                    columnCount,
-                    rowCount,
-                    bitmapSize
-                )
-
-                win.setSize(width, height)
-
-                // If the Satellite client is connected and key properties changed, update the device config
-                if (global.satelliteClient) {
-                    global.satelliteClient.removeDevice(deviceId)
-                    global.satelliteClient.addDevice(deviceId, 'ScreenDeck', {
-                        columnCount: store.get(
-                            `device.${deviceId}.columnCount`,
-                            8
-                        ),
-                        rowCount: store.get(`device.${deviceId}.rowCount`, 4),
-                        bitmapSize: store.get(
-                            `device.${deviceId}.bitmapSize`,
-                            72
-                        ),
-                        colours: true,
-                        text: true,
-                        brightness: true,
-                        pincodeMap: null,
-                    })
-                }
-
-                win.webContents.send('rebuildGrid', {
-                    columnCount,
-                    rowCount,
-                })
-            }
-
-            // Update background color/opacity *live*
-            if (
-                config.backgroundColor !== undefined ||
-                config.backgroundOpacity !== undefined
-            ) {
-                const backgroundColor = store.get(
-                    `device.${deviceId}.backgroundColor`,
-                    '#000000'
-                )
-                const backgroundOpacity = store.get(
-                    `device.${deviceId}.backgroundOpacity`,
-                    0.5
-                )
-
-                console.log('Updating background color/opacity:', {
-                    backgroundColor,
-                    backgroundOpacity,
-                })
-
-                win.webContents.send('updateBackground', {
-                    backgroundColor,
-                    backgroundOpacity,
-                })
-            }
-
-            win.show()
-        }
-
-        updateTrayMenu()
+        return defaultConfig
     })
 
     ipcMain.handle('deleteDevice', (_event, deviceId) => {
