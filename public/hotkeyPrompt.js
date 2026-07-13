@@ -3,6 +3,23 @@ window.addEventListener('DOMContentLoaded', () => {
     let primaryKey = ''
     let deviceId = ''
     let keyIndex = ''
+    let currentHotkeys = []
+
+    function showHotkeyError(message) {
+        const errorEl = document.getElementById('hotkeyError')
+        if (errorEl) {
+            errorEl.textContent = message
+        } else {
+            alert(message)
+        }
+    }
+
+    function clearHotkeyError() {
+        const errorEl = document.getElementById('hotkeyError')
+        if (errorEl) {
+            errorEl.textContent = ''
+        }
+    }
 
     // Get initial data
     window.electronAPI.invoke('getHotkeyContext').then((data) => {
@@ -51,6 +68,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateHotkeyList(hotkeys) {
+        currentHotkeys = hotkeys || []
+
         const tbody = document.getElementById('hotkeyList')
         tbody.innerHTML = ''
 
@@ -106,6 +125,8 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('assignHotkey').addEventListener('click', () => {
+        clearHotkeyError()
+
         if (!primaryKey) {
             alert('Please enter a key')
             return
@@ -120,14 +141,35 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const hotkeyStr = Array.from(modifiers).join('+') + `+${primaryKey}`
 
+        // Proactively check for conflicts with other keys/devices before
+        // even asking the main process to register the hotkey.
+        const conflict = currentHotkeys.find(
+            (h) =>
+                h.hotkey === hotkeyStr &&
+                (h.deviceId !== deviceId || h.keyIndex !== keyIndex)
+        )
+
+        if (conflict) {
+            showHotkeyError(
+                `${hotkeyStr} is already assigned to key ${conflict.keyIndex} on ${conflict.deviceId}`
+            )
+            return
+        }
+
         window.electronAPI
             .invoke('assignHotkey', {
                 deviceId,
                 keyIndex,
                 hotkey: hotkeyStr,
             })
-            .then(() => {
-                window.close()
+            .then((success) => {
+                if (success) {
+                    window.close()
+                } else {
+                    showHotkeyError(
+                        `${hotkeyStr} could not be assigned. It may already be in use.`
+                    )
+                }
             })
     })
 

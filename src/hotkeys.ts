@@ -43,7 +43,7 @@ export function registerHotkey(
         global.registeredHotkeys.set(hotkey, {
             deviceId,
             keyIndex,
-            imageBase64: '',
+            imageBase64,
         })
         console.log(
             `Registered hotkey: ${hotkey} for ${deviceId} key ${keyIndex}`
