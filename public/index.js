@@ -1,7 +1,14 @@
 // Helper function to convert hex + opacity to rgba
 function hexToRgba(hex, opacity) {
     if (!hex) return `rgba(0,0,0,${opacity})`
-    const bigint = parseInt(hex.replace('#', ''), 16)
+    let clean = hex.replace('#', '')
+    if (clean.length === 3) {
+        clean = clean.split('').map((c) => c + c).join('')
+    }
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) {
+        return `rgba(0,0,0,${opacity})`
+    }
+    const bigint = parseInt(clean, 16)
     const r = (bigint >> 16) & 255
     const g = (bigint >> 8) & 255
     const b = bigint & 255
@@ -186,7 +193,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const keypad = document.getElementById('keypad')
         globalColumnCount = columnCount
         globalRowCount = rowCount
-        keysTotal = columnCount * rowCount
+        let keysTotal = columnCount * rowCount
 
         keypad.style.gridTemplateColumns = `repeat(${columnCount}, 1fr)`
 

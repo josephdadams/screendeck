@@ -709,7 +709,10 @@ export class CompanionSatelliteClient
             } else if (typeof value === 'number') {
                 valueStr = value.toString()
             } else {
-                valueStr = `"${value}"`
+                const escaped = String(value)
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                valueStr = `"${escaped}"`
             }
             chunks.push(`${key}=${valueStr}`)
         }

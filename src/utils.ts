@@ -284,40 +284,6 @@ export function loadProfile(profileId: string) {
     //restart the app
     app.relaunch()
     app.exit(0)
-
-    /*
-    // Recreate device windows
-    createDeviceWindows()
-    const deviceIds = store.get('deviceIds', []) as string[]
-    console.log(`Recreating windows for devices: ${deviceIds.join(', ')}`)
-    for (const deviceId of deviceIds) {
-        console.log(`[Satellite] Adding device: ${deviceId}`)
-        global.satelliteClient?.addDevice(deviceId, 'ScreenDeck', {
-            columnCount: store.get(`device.${deviceId}.columnCount`, 8),
-            rowCount: store.get(`device.${deviceId}.rowCount`, 4),
-            bitmapSize: store.get(`device.${deviceId}.bitmapSize`, 72),
-            colours: true,
-            text: true,
-            brightness: true,
-            pincodeMap: null,
-        })
-    }
-
-    showWindows()
-
-    //register hotkeys for the new devices
-    loadHotkeysFromStore()
-
-    console.log(`Profile "${profileName}" loaded.`)
-
-    showNotification(
-        'Profile Loaded',
-        `Profile "${profileName}" has been loaded successfully.`
-    )
-
-    store.set('currentProfile', profileId)
-
-    updateTrayMenu()*/
 }
 
 export function deleteProfile(profileId: string) {
