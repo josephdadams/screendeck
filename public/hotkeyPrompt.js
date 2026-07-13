@@ -22,7 +22,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     // Get initial data
-    window.electronAPI.invoke('getHotkeyContext').then((data) => {
+    window.electronAPI.getHotkeyContext().then((data) => {
         deviceId = data.deviceId
         keyIndex = data.keyIndex
 
@@ -110,7 +110,7 @@ window.addEventListener('DOMContentLoaded', () => {
             btn.textContent = 'Clear'
             btn.addEventListener('click', () => {
                 window.electronAPI
-                    .invoke('clearHotkey', {
+                    .clearHotkey({
                         deviceId: h.deviceId,
                         keyIndex: h.keyIndex,
                         hotkey: h.hotkey,
@@ -157,7 +157,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         window.electronAPI
-            .invoke('assignHotkey', {
+            .assignHotkey({
                 deviceId,
                 keyIndex,
                 hotkey: hotkeyStr,
@@ -174,11 +174,11 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     document.getElementById('cancel').addEventListener('click', () => {
-        window.electronAPI.invoke('closeHotkeyPrompt')
+        window.electronAPI.closeHotkeyPrompt()
     })
 
     document.getElementById('closeButton').addEventListener('click', () => {
-        window.electronAPI.invoke('closeHotkeyPrompt')
+        window.electronAPI.closeHotkeyPrompt()
     })
 })
 
