@@ -371,7 +371,7 @@ export function initializeIpcHandlers() {
                 win.webContents.send('autoHide', Boolean(config.autoHide))
             }
             if (config.hideEmptyKeys !== undefined) {
-                //resizeWindowForDevice(deviceId)
+                resizeWindowForDevice(deviceId)
                 win.webContents.send(
                     'hideEmptyKeys',
                     Boolean(config.hideEmptyKeys)

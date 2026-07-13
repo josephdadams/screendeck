@@ -4,6 +4,7 @@ import ShortUniqueId from 'short-uuid'
 import { defaultSettings } from './defaults' // Your settings file
 import path from 'path'
 import { createNewDevice, createDeviceWindows, showWindows } from './device' // Function to create a new device
+import { resizeWindowForDevice } from './device'
 import { CompanionSatelliteClient } from './client' // Your new client class
 import { updateTrayMenu } from './tray'
 import { ProfilesStore, Profile } from './types' // Import your types
@@ -102,7 +103,7 @@ export function createSatellite() {
         // Send the draw event to the corresponding device window
         const win = global.deviceWindows.get(data.deviceId)
         if (win) {
-            //resizeWindowForDevice(data.deviceId)
+            resizeWindowForDevice(data.deviceId)
             win.webContents.send('draw', data)
         }
     })

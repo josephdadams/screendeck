@@ -142,8 +142,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 alwaysOnTopInput,
                 movableInput,
                 disablePressInput,
-                //autoHideInput,
-                //hideEmptyKeysInput,
+                autoHideInput,
+                hideEmptyKeysInput,
             ].forEach((inputObj) => {
                 rightFields.appendChild(inputObj.label)
                 rightFields.appendChild(inputObj.input)
@@ -173,8 +173,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     alwaysOnTop: alwaysOnTopInput.input.checked,
                     movable: movableInput.input.checked,
                     disablePress: disablePressInput.input.checked,
-                    //autoHide: autoHideInput.input.checked,
-                    //hideEmptyKeys: hideEmptyKeysInput.input.checked,
+                    autoHide: autoHideInput.input.checked,
+                    hideEmptyKeys: hideEmptyKeysInput.input.checked,
                     backgroundColor: backgroundColorInput.value,
                     backgroundOpacity: parseFloat(backgroundOpacityInput.value),
                 }
