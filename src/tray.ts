@@ -63,10 +63,10 @@ function updateTrayMenu() {
             label: `Hide All Screen Decks`,
             type: 'normal',
             click: () => {
-                global.deviceWindows.forEach((win) => {
+                global.deviceWindows.forEach((win, deviceId) => {
                     if (win.isVisible()) {
                         win.hide()
-                        store.set(`device.${win.webContents.id}.hidden`, true)
+                        store.set(`device.${deviceId}.hidden`, true)
                     }
                 })
                 updateTrayMenu()
@@ -76,10 +76,10 @@ function updateTrayMenu() {
             label: `Show All Screen Decks`,
             type: 'normal',
             click: () => {
-                global.deviceWindows.forEach((win) => {
+                global.deviceWindows.forEach((win, deviceId) => {
                     if (!win.isVisible()) {
                         win.show()
-                        store.set(`device.${win.webContents.id}.hidden`, false)
+                        store.set(`device.${deviceId}.hidden`, false)
                     }
                 })
                 updateTrayMenu()
@@ -191,6 +191,8 @@ function updateTrayMenu() {
             label: 'Quit',
             type: 'normal',
             click: () => {
+                global.isQuitting = true
+
                 // Disconnect Companion client
                 if (global.satelliteClient) {
                     global.satelliteClient.disconnect() // or .disconnect() based on your API
@@ -211,11 +213,6 @@ function updateTrayMenu() {
 
                 // Quit the app
                 app.quit()
-
-                setTimeout(() => {
-                    console.log('Force exiting app...')
-                    process.exit(0)
-                }, 1000)
             },
         },
         { type: 'separator' },

@@ -106,6 +106,9 @@ export function createDeviceWindow(deviceId: string) {
         updateTrayMenu()
     })
     win.on('close', (event) => {
+        if (global.isQuitting) {
+            return
+        }
         event.preventDefault() // Prevent default close behavior
         win.hide() // Hide the window instead of closing it
         win.webContents.send('windowClosed', { deviceId })
