@@ -1,7 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
-import Store from 'electron-store'
 import ShortUniqueId from 'short-uuid'
-import { defaultSettings } from './defaults' // Your settings file
 import path from 'path'
 import { createNewDevice, createDeviceWindows, showWindows } from './device' // Function to create a new device
 import { resizeWindowForDevice } from './device'
@@ -10,8 +8,7 @@ import { updateTrayMenu } from './tray'
 import { ProfilesStore, Profile } from './types' // Import your types
 import { showNotification } from './notification'
 import { unregisterAllHotkeys, loadHotkeysFromStore } from './hotkeys' // Import hotkey management functions
-
-const store = new Store({ defaults: defaultSettings })
+import { store } from './store'
 
 export const showDevTools =
     process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'

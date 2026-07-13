@@ -1,7 +1,5 @@
 import { globalShortcut } from 'electron'
-import Store from 'electron-store'
-
-const store = new Store()
+import { store } from './store'
 
 export function registerHotkey(
     hotkey: string,
