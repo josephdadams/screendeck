@@ -283,8 +283,10 @@ window.addEventListener('DOMContentLoaded', () => {
         menu.style.position = 'fixed'
         menu.innerHTML = `
     <div class="menu-item" data-action="encoder">Set to Encoder Mode</div>
+    <div class="menu-item" data-action="set-step-size">Set Step Size...</div>
     <div class="menu-item" data-action="button">Set to Button Mode (Normal)</div>
     <div class="menu-item" data-action="button-sticky">Set to Sticky Button Mode</div>
+    <div class="menu-item" data-action="clear-sticky">Clear Sticky Mode</div>
     <div class="menu-item" data-action="hotkey">Assign Hotkey...</div>
     `
 
@@ -345,6 +347,48 @@ window.addEventListener('DOMContentLoaded', () => {
                         config: { isEncoder: false, isSticky: true },
                     })
                     .then(() => refreshKey(deviceId, keyIndex))
+            } else if (action === 'set-step-size') {
+                window.electronAPI
+                    .invoke('getKeyConfig', { deviceId, keyIndex })
+                    .then((current) => {
+                        const input = prompt(
+                            'Enter step size (degrees per notch):',
+                            current.stepSize || 10
+                        )
+                        if (input === null) return
+                        const stepSize = parseInt(input, 10)
+                        if (isNaN(stepSize) || stepSize <= 0) {
+                            alert('Please enter a positive whole number.')
+                            return
+                        }
+                        window.electronAPI
+                            .invoke('updateKeyConfig', {
+                                deviceId,
+                                keyIndex,
+                                config: {
+                                    isEncoder: current.isEncoder,
+                                    isSticky: current.isSticky,
+                                    stepSize,
+                                },
+                            })
+                            .then(() => refreshKey(deviceId, keyIndex))
+                    })
+            } else if (action === 'clear-sticky') {
+                window.electronAPI
+                    .invoke('getKeyConfig', { deviceId, keyIndex })
+                    .then((current) => {
+                        window.electronAPI
+                            .invoke('updateKeyConfig', {
+                                deviceId,
+                                keyIndex,
+                                config: {
+                                    isEncoder: current.isEncoder,
+                                    isSticky: false,
+                                    stepSize: current.stepSize,
+                                },
+                            })
+                            .then(() => refreshKey(deviceId, keyIndex))
+                    })
             } else if (action === 'hotkey') {
                 let keyConfig = keyStates.get(deviceId)?.get(keyIndex)
                 let imageBase64 = keyConfig?.imageBase64 || null
