@@ -36,6 +36,7 @@ declare global {
     >
     var trayParentWindow: BrowserWindow
     var settingsWindow: BrowserWindow | null
+    var isQuitting: boolean
 }
 
 // Initialize the Companion Satellite client and device windows
@@ -47,6 +48,7 @@ function init() {
     global.hotkeyContext = null
     global.registeredHotkeys = new Map()
     global.settingsWindow = null
+    global.isQuitting = false
 
     global.trayParentWindow = new BrowserWindow({
         show: false,
