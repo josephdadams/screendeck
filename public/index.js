@@ -38,7 +38,7 @@ window.addEventListener('DOMContentLoaded', () => {
     let globalHideEmptyKeys = false
 
     // Request config from main process
-    window.electronAPI.invoke('getDeviceConfig', deviceId).then((config) => {
+    window.electronAPI.getDeviceConfig(deviceId).then((config) => {
         const { autoHide, hideEmptyKeys, backgroundColor, backgroundOpacity } =
             config
 
@@ -83,11 +83,11 @@ window.addEventListener('DOMContentLoaded', () => {
 
             // Save current size before shrinking
             window.electronAPI
-                .invoke('getKeypadBounds', deviceId)
+                .getKeypadBounds(deviceId)
                 .then((bounds) => {
                     originalBounds = bounds
                     const bitmapSize = bounds.bitmapSize || 72
-                    window.electronAPI.invoke('resizeKeypadWindow', {
+                    window.electronAPI.resizeKeypadWindow({
                         deviceId,
                         width: bitmapSize + 50, // 50px padding
                         height: bitmapSize + 50, // 50px padding
@@ -115,7 +115,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
 
             // Restore original size
-            window.electronAPI.invoke('resizeKeypadWindow', {
+            window.electronAPI.resizeKeypadWindow({
                 deviceId,
                 width: originalBounds.width,
                 height: originalBounds.height,
@@ -332,7 +332,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
             if (action === 'encoder') {
                 window.electronAPI
-                    .invoke('updateKeyConfig', {
+                    .updateKeyConfig({
                         deviceId,
                         keyIndex,
                         config: { isEncoder: true },
@@ -340,7 +340,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     .then(() => refreshKey(deviceId, keyIndex))
             } else if (action === 'button') {
                 window.electronAPI
-                    .invoke('updateKeyConfig', {
+                    .updateKeyConfig({
                         deviceId,
                         keyIndex,
                         config: { isEncoder: false },
@@ -399,12 +399,12 @@ window.addEventListener('DOMContentLoaded', () => {
             } else if (action === 'hotkey') {
                 let keyConfig = keyStates.get(deviceId)?.get(keyIndex)
                 let imageBase64 = keyConfig?.imageBase64 || null
-                window.electronAPI.invoke('setHotkeyContext', {
+                window.electronAPI.setHotkeyContext({
                     deviceId,
                     keyIndex,
                     imageBase64,
                 })
-                window.electronAPI.invoke('openHotkeyPrompt')
+                window.electronAPI.openHotkeyPrompt()
             }
 
             closeContextMenu()
@@ -442,7 +442,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     function refreshKey(deviceId, keyIndex) {
         window.electronAPI
-            .invoke('getKeyConfig', { deviceId, keyIndex })
+            .getKeyConfig({ deviceId, keyIndex })
             .then((keyConfig) => {
                 const keyElement = keyElements[keyIndex]
                 if (!keyElement) return
@@ -588,7 +588,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     function sendKeyPressXY(x, y, action) {
-        window.electronAPI.send('keyPress', {
+        window.electronAPI.keyPress({
             deviceId,
             x,
             y,
@@ -634,7 +634,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
         setTimeout(() => {
             window.electronAPI
-                .invoke('getDeviceConfig', deviceId)
+                .getDeviceConfig(deviceId)
                 .then((config) => {
                     console.log('got config:', config)
                     const { backgroundColor, backgroundOpacity } = config
@@ -692,7 +692,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Close button
     document.getElementById('closeButton').addEventListener('click', () => {
-        window.electronAPI.invoke('closeKeypad', deviceId) // Send deviceId so main process knows which to close
+        window.electronAPI.closeKeypad(deviceId) // Send deviceId so main process knows which to close
     })
 
     function processKey(keyObj) {

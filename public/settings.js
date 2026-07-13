@@ -14,7 +14,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 10
             )
 
-            await window.electronAPI.invoke('saveSettings', {
+            await window.electronAPI.saveSettings({
                 companionIP: ip,
                 companionPort: port,
             })
@@ -26,16 +26,16 @@ window.addEventListener('DOMContentLoaded', () => {
             // Optionally clear the message after a few seconds
             setTimeout(() => {
                 status.textContent = ''
-                window.electronAPI.invoke('closeSettingsWindow')
+                window.electronAPI.closeSettingsWindow()
             }, 1000)
         })
 
     document.getElementById('closeButton').addEventListener('click', () => {
-        window.electronAPI.invoke('closeSettingsWindow')
+        window.electronAPI.closeSettingsWindow()
     })
 
     async function loadCompanionSettings() {
-        const settings = await window.electronAPI.invoke('getSettings')
+        const settings = await window.electronAPI.getSettings()
 
         document.getElementById('companionIP').value =
             settings.companionIP || '127.0.0.1'
@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadDevices() {
-        const devices = await window.electronAPI.invoke('getAllDevices')
+        const devices = await window.electronAPI.getAllDevices()
         deviceList.innerHTML = ''
 
         devices.forEach((device) => {
@@ -110,14 +110,14 @@ window.addEventListener('DOMContentLoaded', () => {
             backgroundOpacityLabel.appendChild(backgroundOpacityInput)
 
             /*backgroundColorInput.addEventListener('input', async () => {
-                await window.electronAPI.invoke('updateDeviceConfig', {
+                await window.electronAPI.updateDeviceConfig({
                     deviceId: device.deviceId,
                     config: { backgroundColor: backgroundColorInput.value },
                 })
             })*/
 
             backgroundOpacityInput.addEventListener('input', async () => {
-                await window.electronAPI.invoke('updateDeviceConfig', {
+                await window.electronAPI.updateDeviceConfig({
                     deviceId: device.deviceId,
                     config: {
                         backgroundOpacity: parseFloat(
@@ -178,7 +178,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     backgroundColor: backgroundColorInput.value,
                     backgroundOpacity: parseFloat(backgroundOpacityInput.value),
                 }
-                await window.electronAPI.invoke('updateDeviceConfig', {
+                await window.electronAPI.updateDeviceConfig({
                     deviceId: device.deviceId,
                     config,
                 })
@@ -212,10 +212,7 @@ window.addEventListener('DOMContentLoaded', () => {
             deleteBtn.style.color = 'white'
             deleteBtn.addEventListener('click', async () => {
                 if (confirm(`Delete device ${device.deviceId}?`)) {
-                    await window.electronAPI.invoke(
-                        'deleteDevice',
-                        device.deviceId
-                    )
+                    await window.electronAPI.deleteDevice(device.deviceId)
                     loadDevices()
                 }
             })
@@ -271,7 +268,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     addDeviceButton.addEventListener('click', async () => {
-        await window.electronAPI.invoke('createNewDevice')
+        await window.electronAPI.createNewDevice()
         loadDevices()
     })
 })
