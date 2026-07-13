@@ -445,15 +445,18 @@ window.addEventListener('DOMContentLoaded', () => {
                     handleDirection(deltaX)
                 }
 
+                const onEnter = () => {
+                    window.focus()
+                }
+
                 const onUp = () => {
                     window.removeEventListener('mousemove', onMove)
                     window.removeEventListener('mouseup', onUp)
+                    window.removeEventListener('mouseenter', onEnter)
                     key.classList.remove('rotateLeft', 'rotateRight')
                 }
 
-                window.addEventListener('mouseenter', () => {
-                    window.focus()
-                })
+                window.addEventListener('mouseenter', onEnter)
                 window.addEventListener('mousemove', onMove)
                 window.addEventListener('mouseup', onUp)
             } else {
