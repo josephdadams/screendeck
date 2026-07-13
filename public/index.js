@@ -348,7 +348,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     .then(() => refreshKey(deviceId, keyIndex))
             } else if (action === 'button-sticky') {
                 window.electronAPI
-                    .invoke('updateKeyConfig', {
+                    .updateKeyConfig({
                         deviceId,
                         keyIndex,
                         config: { isEncoder: false, isSticky: true },
