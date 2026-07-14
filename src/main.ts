@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, powerMonitor } from 'electron'
 import type { CompanionSatelliteClient } from './client' // Your new client class
 import { initializeIpcHandlers } from './ipcHandlers' // Import IPC handlers
 import createTray from './tray' // Import the tray creation function
@@ -94,5 +94,15 @@ app.whenReady().then(() => {
 
     app.on('quit', () => {
         console.log('App has quit.')
+    })
+
+    powerMonitor.on('resume', () => {
+        console.log('System resumed from sleep, refreshing device windows...')
+        global.deviceWindows.forEach((win) => {
+            if (win.isVisible()) {
+                win.hide()
+                win.show()
+            }
+        })
     })
 })
