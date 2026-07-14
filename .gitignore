@@ -35,7 +35,8 @@ yarn-error.log*
 
 # Compiled output
 dist/
-build/
+build/*
+!build/installer.nsh
 
 # Runtime data
 pids

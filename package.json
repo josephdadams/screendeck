@@ -51,6 +51,9 @@
             "target": "nsis",
             "icon": "assets/tray-icon.ico"
         },
+        "nsis": {
+            "include": "build/installer.nsh"
+        },
         "linux": {
             "target": [
                 {
