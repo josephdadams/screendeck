@@ -824,6 +824,14 @@ window.addEventListener('DOMContentLoaded', () => {
         window.electronAPI.closeKeypad(deviceId) // Send deviceId so main process knows which to close
     })
 
+    // Double-click the drag handle to collapse/expand the window (#40)
+    const dragHandle = document.getElementById('dragHandle')
+    if (dragHandle) {
+        dragHandle.addEventListener('dblclick', () => {
+            window.electronAPI.toggleDeviceCollapsed(deviceId)
+        })
+    }
+
     function processKey(keyObj) {
         console.log('Processing key:', keyObj)
 
