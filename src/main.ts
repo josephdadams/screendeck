@@ -9,6 +9,9 @@ import { createDeviceWindows, startEdgeRevealPolling } from './device' // Import
 
 import { loadHotkeysFromStore, HotkeyBinding } from './hotkeys'
 
+import { startRestServer, watchRestServerSettings } from './restServer'
+import { startMdnsAnnouncer, watchMdnsAnnouncerSettings } from './mdnsAnnouncer'
+
 declare global {
     var satelliteClient: CompanionSatelliteClient | null
     var deviceWindows: Map<string, BrowserWindow>
@@ -58,6 +61,11 @@ function init() {
     createSatellite() // Initialize the Companion Satellite client
     loadHotkeysFromStore() // Load hotkeys from the store
     startEdgeRevealPolling() // Start polling cursor position for edge-reveal devices (#10)
+
+    startRestServer() // Start the remote-config REST server (#4)
+    watchRestServerSettings()
+    startMdnsAnnouncer() // Advertise this install over mDNS (#4)
+    watchMdnsAnnouncerSettings()
 }
 
 app.whenReady().then(() => {

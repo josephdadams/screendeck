@@ -74,6 +74,7 @@
         "generateUpdatesFilesForAllChannels": false
     },
     "dependencies": {
+        "@julusian/bonjour-service": "^1.4.3",
         "electron-store": "^8.0.0",
         "semver": "^7.7.2",
         "short-uuid": "^5.2.0",

@@ -85,6 +85,39 @@
             </label>
             <br />
 
+            <h2>Discovery &amp; Remote Configuration</h2>
+            <label for="installationName">Installation Name:</label>
+            <input
+                type="text"
+                id="installationName"
+                placeholder="ScreenDeck"
+                style="width: 200px"
+            />
+            <br />
+            <label for="mdnsEnabled">
+                <input type="checkbox" id="mdnsEnabled" />
+                Enable mDNS Discovery (let Companion find this ScreenDeck on
+                the network)
+            </label>
+            <br />
+            <label for="restEnabled">
+                <input type="checkbox" id="restEnabled" />
+                Enable Remote Configuration (REST API)
+            </label>
+            <label for="restPort">Port:</label>
+            <input
+                type="number"
+                id="restPort"
+                placeholder="9999"
+                style="width: 60px"
+            />
+            <p style="font-size: 12px; opacity: 0.7; max-width: 500px">
+                When enabled, other devices on your network can view this
+                ScreenDeck's connection status and change which Companion
+                server it connects to. This API is not password protected,
+                so only enable it on a trusted network.
+            </p>
+
             <button id="saveCompanion" style="width: 80x">Save</button>
             <span
                 id="saveStatus"
