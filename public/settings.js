@@ -25,10 +25,23 @@ window.addEventListener('DOMContentLoaded', () => {
             const showOnStartup =
                 document.getElementById('showOnStartup').checked
 
+            const installationName =
+                document.getElementById('installationName').value
+            const mdnsEnabled = document.getElementById('mdnsEnabled').checked
+            const restEnabled = document.getElementById('restEnabled').checked
+            const restPort = parseInt(
+                document.getElementById('restPort').value,
+                10
+            )
+
             await window.electronAPI.saveSettings({
                 companionIP: ip,
                 companionPort: port,
                 showOnStartup: showOnStartup,
+                installationName: installationName,
+                mdnsEnabled: mdnsEnabled,
+                restEnabled: restEnabled,
+                restPort: restPort,
             })
 
             // Show status message
@@ -55,6 +68,15 @@ window.addEventListener('DOMContentLoaded', () => {
             settings.companionPort || 16622
         document.getElementById('showOnStartup').checked =
             settings.showOnStartup !== false
+
+        document.getElementById('installationName').value =
+            settings.installationName || ''
+        document.getElementById('mdnsEnabled').checked =
+            settings.mdnsEnabled !== false
+        document.getElementById('restEnabled').checked =
+            settings.restEnabled !== false
+        document.getElementById('restPort').value =
+            settings.restPort || 9999
     }
 
     async function loadDevices() {

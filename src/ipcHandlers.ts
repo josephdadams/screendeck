@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import * as path from 'path'
-import { createSatellite, getNextProfileName } from './utils'
+import { getNextProfileName, applyCompanionConnectionSettings } from './utils'
 import { updateTrayMenu } from './tray'
 
 import {
@@ -673,29 +673,7 @@ export function initializeIpcHandlers() {
 
     // Handle saving settings
     ipcMain.handle('saveSettings', (_event, newSettings) => {
-        const previousIP = store.get('companionIP', '127.0.0.1')
-        const previousPort = store.get('companionPort', 16622)
-
-        store.set(newSettings)
-
-        const newIP = newSettings.companionIP
-        const newPort = newSettings.companionPort
-
-        if (newIP !== previousIP || newPort !== previousPort) {
-            console.log(
-                'Companion IP or port changed, restarting connection...'
-            )
-
-            if (global.satelliteClient) {
-                global.satelliteClient.disconnect() // Your close method for the new API
-                global.satelliteClient = null
-            }
-
-            // Wait briefly, then reconnect with the new IP/port
-            setTimeout(() => {
-                createSatellite() // Your function to initialize the Satellite client
-            }, 500)
-        }
+        applyCompanionConnectionSettings(newSettings)
     })
 
     ipcMain.handle('closeSettingsWindow', () => {

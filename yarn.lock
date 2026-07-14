@@ -2,7 +2,7 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 8
+  version: 10
   cacheKey: 10c0
 
 "7zip-bin@npm:~5.2.0":
@@ -206,6 +206,24 @@ __metadata:
     "@jridgewell/resolve-uri": "npm:^3.0.3"
     "@jridgewell/sourcemap-codec": "npm:^1.4.10"
   checksum: 10c0/fa425b606d7c7ee5bfa6a31a7b050dd5814b4082f318e0e4190f991902181b4330f43f4805db1dd4f2433fd0ed9cc7a7b9c2683f1deeab1df1b0a98b1e24055b
+  languageName: node
+  linkType: hard
+
+"@julusian/bonjour-service@npm:^1.4.3":
+  version: 1.4.3
+  resolution: "@julusian/bonjour-service@npm:1.4.3"
+  dependencies:
+    dns-packet: "npm:^5.2.2"
+    fast-deep-equal: "npm:^3.1.3"
+    thunky: "npm:^1.0.2"
+  checksum: 10c0/011f778a62cf59c4579063424fe63345b80ad90161a990d158e45f6a4243fc633ea2695a09509f4b5e321e3a26166c71614785fb466a2d0d85b87316a0ae24c9
+  languageName: node
+  linkType: hard
+
+"@leichtgewicht/ip-codec@npm:^2.0.1":
+  version: 2.0.5
+  resolution: "@leichtgewicht/ip-codec@npm:2.0.5"
+  checksum: 10c0/14a0112bd59615eef9e3446fea018045720cd3da85a98f801a685a818b0d96ef2a1f7227e8d271def546b2e2a0fe91ef915ba9dc912ab7967d2317b1a051d66b
   languageName: node
   linkType: hard
 
@@ -1382,6 +1400,15 @@ __metadata:
   bin:
     dmg-license: bin/dmg-license.js
   conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"dns-packet@npm:^5.2.2":
+  version: 5.6.1
+  resolution: "dns-packet@npm:5.6.1"
+  dependencies:
+    "@leichtgewicht/ip-codec": "npm:^2.0.1"
+  checksum: 10c0/8948d3d03063fb68e04a1e386875f8c3bcc398fc375f535f2b438fad8f41bf1afa6f5e70893ba44f4ae884c089247e0a31045722fa6ff0f01d228da103f1811d
   languageName: node
   linkType: hard
 
@@ -3168,6 +3195,7 @@ __metadata:
   resolution: "screendeck@workspace:."
   dependencies:
     "@electron/notarize": "npm:^2.5.0"
+    "@julusian/bonjour-service": "npm:^1.4.3"
     "@types/electron": "npm:^1.6.12"
     "@types/node": "npm:^22.15.29"
     "@types/semver": "npm:^7.7.0"
@@ -3519,6 +3547,13 @@ __metadata:
     async-exit-hook: "npm:^2.0.1"
     fs-extra: "npm:^10.0.0"
   checksum: 10c0/70e441909097346a930ae02278df9b0133cd02dddf0b49e5ddaade735fef1410a50a448a2a812106f97c045294c99cc19f26943eb88f1d728d41fbc445a40298
+  languageName: node
+  linkType: hard
+
+"thunky@npm:^1.0.2":
+  version: 1.1.0
+  resolution: "thunky@npm:1.1.0"
+  checksum: 10c0/369764f39de1ce1de2ba2fa922db4a3f92e9c7f33bcc9a713241bc1f4a5238b484c17e0d36d1d533c625efb00e9e82c3e45f80b47586945557b45abb890156d2
   languageName: node
   linkType: hard
 

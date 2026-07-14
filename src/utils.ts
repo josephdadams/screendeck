@@ -186,6 +186,36 @@ export function createSatellite() {
         })
 }
 
+// Applies a settings update that may include a new Companion IP/port,
+// reconnecting the satellite client if either actually changed. Shared by
+// the `saveSettings` IPC handler (Settings UI) and the mDNS/REST remote
+// config server (#4), so both paths trigger a reconnect the same way.
+export function applyCompanionConnectionSettings(
+    newSettings: Record<string, unknown>
+) {
+    const previousIP = store.get('companionIP', '127.0.0.1')
+    const previousPort = store.get('companionPort', 16622)
+
+    store.set(newSettings)
+
+    const newIP = newSettings.companionIP ?? previousIP
+    const newPort = newSettings.companionPort ?? previousPort
+
+    if (newIP !== previousIP || newPort !== previousPort) {
+        console.log('Companion IP or port changed, restarting connection...')
+
+        if (global.satelliteClient) {
+            global.satelliteClient.disconnect()
+            global.satelliteClient = null
+        }
+
+        // Wait briefly, then reconnect with the new IP/port
+        setTimeout(() => {
+            createSatellite()
+        }, 500)
+    }
+}
+
 // ===========================
 // Profile Management
 // ===========================
