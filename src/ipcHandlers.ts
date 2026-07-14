@@ -59,6 +59,17 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
         if (config.disablePress !== undefined) {
             win.webContents.send('disablePress', Boolean(config.disablePress))
         }
+        if (config.edgeReveal !== undefined) {
+            // Turning edgeReveal on hands visibility control to the poll
+            // loop (startEdgeRevealPolling), so hide immediately rather than
+            // waiting for the cursor to move; turning it off falls back to
+            // being purely `hidden`-controlled, so show immediately (#10).
+            if (Boolean(config.edgeReveal)) {
+                win.hide()
+            } else {
+                win.show()
+            }
+        }
         if (config.dimOnLeave !== undefined) {
             win.webContents.send('dimOnLeave', Boolean(config.dimOnLeave))
         }
@@ -148,7 +159,12 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
             })
         }
 
-        win.show()
+        // Skip the usual "make sure it's visible" show() if we just
+        // intentionally hid this window to hand control to the edgeReveal
+        // poll loop (#10) - otherwise this would immediately undo that.
+        if (!(config.edgeReveal !== undefined && Boolean(config.edgeReveal))) {
+            win.show()
+        }
     }
 
     updateTrayMenu()
@@ -165,6 +181,7 @@ export function initializeIpcHandlers() {
         const disablePress = store.get(`device.${deviceId}.disablePress`, false)
         const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
         const autoHide = store.get(`device.${deviceId}.autoHide`, false)
+        const edgeReveal = store.get(`device.${deviceId}.edgeReveal`, false)
         const hideEmptyKeys = store.get(
             `device.${deviceId}.hideEmptyKeys`,
             false
@@ -188,6 +205,7 @@ export function initializeIpcHandlers() {
             disablePress,
             dimOnLeave,
             autoHide,
+            edgeReveal,
             hideEmptyKeys,
             backgroundColor,
             backgroundOpacity,
@@ -482,6 +500,7 @@ export function initializeIpcHandlers() {
             disablePress: store.get(`device.${id}.disablePress`, false),
             dimOnLeave: store.get(`device.${id}.dimOnLeave`, false),
             autoHide: store.get(`device.${id}.autoHide`, false),
+            edgeReveal: store.get(`device.${id}.edgeReveal`, false),
             hideEmptyKeys: store.get(`device.${id}.hideEmptyKeys`, false),
             backgroundColor: store.get(
                 `device.${id}.backgroundColor`,

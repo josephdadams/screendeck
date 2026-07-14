@@ -5,7 +5,7 @@ import createTray from './tray' // Import the tray creation function
 
 import { initializeDeviceIds, createSatellite } from './utils' // Import utility functions
 
-import { createDeviceWindows } from './device' // Import device window creation
+import { createDeviceWindows, startEdgeRevealPolling } from './device' // Import device window creation
 
 import { loadHotkeysFromStore } from './hotkeys'
 
@@ -64,6 +64,7 @@ function init() {
     createDeviceWindows() // Create device windows
     createSatellite() // Initialize the Companion Satellite client
     loadHotkeysFromStore() // Load hotkeys from the store
+    startEdgeRevealPolling() // Start polling cursor position for edge-reveal devices (#10)
 }
 
 app.whenReady().then(() => {

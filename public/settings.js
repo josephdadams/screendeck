@@ -99,6 +99,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 'Auto Hide on Mouse Leave',
                 device.autoHide || false
             )
+            const edgeRevealInput = createCheckbox(
+                'Edge Reveal (show near its screen corner)',
+                device.edgeReveal || false
+            )
             const hideEmptyKeysInput = createCheckbox(
                 'Hide Empty Keys',
                 device.hideEmptyKeys || false
@@ -159,6 +163,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 disablePressInput,
                 dimOnLeaveInput,
                 autoHideInput,
+                edgeRevealInput,
                 hideEmptyKeysInput,
             ].forEach((inputObj) => {
                 rightFields.appendChild(inputObj.label)
@@ -192,6 +197,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     disablePress: disablePressInput.input.checked,
                     dimOnLeave: dimOnLeaveInput.input.checked,
                     autoHide: autoHideInput.input.checked,
+                    edgeReveal: edgeRevealInput.input.checked,
                     hideEmptyKeys: hideEmptyKeysInput.input.checked,
                     backgroundColor: backgroundColorInput.value,
                     backgroundOpacity: parseFloat(backgroundOpacityInput.value),
