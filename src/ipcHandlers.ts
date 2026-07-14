@@ -85,7 +85,13 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
                 bitmapSize
             )
 
+            // On Windows, BrowserWindow.setSize() can behave unreliably on
+            // resizable: false windows, sometimes only applying one axis of
+            // the resize (see #33). Temporarily allow resizing around the
+            // call as a workaround.
+            win.setResizable(true)
             win.setSize(width, height)
+            win.setResizable(false)
 
             // If the Satellite client is connected and key properties changed, update the device config
             if (global.satelliteClient) {
