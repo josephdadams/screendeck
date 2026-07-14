@@ -87,6 +87,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 device.alwaysOnTop
             )
             const movableInput = createCheckbox('Movable', device.movable)
+            const resizableInput = createCheckbox(
+                'Resizable',
+                device.resizable || false
+            )
             const disablePressInput = createCheckbox(
                 'Disable Button Presses',
                 device.disablePress
@@ -156,6 +160,7 @@ window.addEventListener('DOMContentLoaded', () => {
             ;[
                 alwaysOnTopInput,
                 movableInput,
+                resizableInput,
                 disablePressInput,
                 dimOnLeaveInput,
                 autoHideInput,
@@ -189,6 +194,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     bitmapSize: parseInt(bitmapSizeInput.input.value),
                     alwaysOnTop: alwaysOnTopInput.input.checked,
                     movable: movableInput.input.checked,
+                    resizable: resizableInput.input.checked,
                     disablePress: disablePressInput.input.checked,
                     dimOnLeave: dimOnLeaveInput.input.checked,
                     autoHide: autoHideInput.input.checked,

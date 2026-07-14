@@ -38,6 +38,8 @@ window.addEventListener('DOMContentLoaded', () => {
     let globalAutoHideOnLeave = false
     let globalHideEmptyKeys = false
     let deviceDisplayName = deviceId
+    let globalBitmapSize = 72
+    let globalResizable = false
 
     // Request config from main process
     window.electronAPI.getDeviceConfig(deviceId).then((config) => {
@@ -48,6 +50,8 @@ window.addEventListener('DOMContentLoaded', () => {
             hideEmptyKeys,
             backgroundColor,
             backgroundOpacity,
+            bitmapSize,
+            resizable,
         } = config
 
         deviceDisplayName = name || deviceId
@@ -55,6 +59,8 @@ window.addEventListener('DOMContentLoaded', () => {
         configureDimOnLeave(globalDimOnLeave)
         globalAutoHideOnLeave = autoHide || false
         globalHideEmptyKeys = hideEmptyKeys || false
+        globalBitmapSize = bitmapSize || 72
+        globalResizable = resizable || false
 
         const keypad = document.getElementById('keypad')
         if (keypad) {
@@ -775,9 +781,16 @@ window.addEventListener('DOMContentLoaded', () => {
         )
     })
 
-    window.electronAPI.onRebuildGrid((_, { columnCount, rowCount }) => {
+    window.electronAPI.onRebuildGrid((_, { columnCount, rowCount, bitmapSize }) => {
         globalColumnCount = columnCount
+        if (bitmapSize) {
+            globalBitmapSize = bitmapSize
+        }
         buildKeyGrid(columnCount, rowCount)
+        // A rebuild means the window now natively matches globalBitmapSize
+        // again (whether from Settings or the resize-drag settle step
+        // below), so any in-progress CSS scale preview should be cleared.
+        resetResizeScalePreview()
     })
 
     // Handle key events from Companion
@@ -992,4 +1005,100 @@ window.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('dimmed')
         }
     }
+
+    // --- Resizable window support (#13) ---
+    //
+    // Every key is forced to the same square bitmapSize, so dragging a
+    // resizable device window to a new size is equivalent to choosing a new
+    // bitmapSize - rather than building a second sizing model, this scales
+    // the grid visually with a CSS transform for smooth feedback *while*
+    // dragging, then - once the user stops - hands off to the exact same
+    // updateDeviceConfig reflow that Settings' "Bitmap" field already uses
+    // (which resizes the window to fit exactly, asks Companion to redraw
+    // crisp bitmaps at the new resolution, and rebuilds the grid).
+    //
+    // Mirrors calculateWindowSize() in src/device.ts - keep in sync if that
+    // formula ever changes.
+    function calculateNaturalSize(columnCount, rowCount, bitmapSize) {
+        const PADDING = 20
+        const GAP = 10
+        const width =
+            columnCount * bitmapSize + (columnCount - 1) * GAP + PADDING * 2
+        const height =
+            rowCount * bitmapSize + (rowCount - 1) * GAP + PADDING * 2
+        return { width, height }
+    }
+
+    let resizeSettleTimeout = null
+    // Set right before we trigger our own window resize (via
+    // updateDeviceConfig), so the resulting `resize` event doesn't
+    // re-trigger this whole scale/settle cycle on itself.
+    let ignoreNextResizeSettle = false
+
+    function resetResizeScalePreview() {
+        const keypad = document.getElementById('keypad')
+        if (keypad) {
+            keypad.style.transform = ''
+        }
+    }
+
+    function handleWindowResize() {
+        if (!globalResizable) return
+        if (ignoreNextResizeSettle) return
+
+        const keypad = document.getElementById('keypad')
+        if (!keypad || !globalColumnCount || !globalRowCount) return
+
+        const natural = calculateNaturalSize(
+            globalColumnCount,
+            globalRowCount,
+            globalBitmapSize
+        )
+        if (natural.width > 0) {
+            const scale = window.innerWidth / natural.width
+            keypad.style.transformOrigin = 'top left'
+            keypad.style.transform = `scale(${scale})`
+        }
+
+        clearTimeout(resizeSettleTimeout)
+        resizeSettleTimeout = setTimeout(settleResize, 400)
+    }
+
+    function settleResize() {
+        if (!globalResizable || !globalColumnCount || !globalRowCount) return
+
+        // Reverse of calculateNaturalSize()'s width formula
+        const PADDING = 20
+        const GAP = 10
+        const effectiveBitmapSize = Math.round(
+            (window.innerWidth - PADDING * 2 - (globalColumnCount - 1) * GAP) /
+                globalColumnCount
+        )
+
+        if (
+            !Number.isFinite(effectiveBitmapSize) ||
+            effectiveBitmapSize <= 0 ||
+            effectiveBitmapSize === globalBitmapSize
+        ) {
+            resetResizeScalePreview()
+            return
+        }
+
+        ignoreNextResizeSettle = true
+        window.electronAPI
+            .updateDeviceConfig({
+                deviceId,
+                config: { bitmapSize: effectiveBitmapSize },
+            })
+            .then(() => {
+                // onRebuildGrid (triggered by this same config change) clears
+                // the CSS preview once the window has been reflowed to its
+                // exact new native size.
+                setTimeout(() => {
+                    ignoreNextResizeSettle = false
+                }, 500)
+            })
+    }
+
+    window.addEventListener('resize', handleWindowResize)
 })
