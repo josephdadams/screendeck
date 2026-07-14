@@ -24,6 +24,7 @@ export function createDeviceWindow(deviceId: string) {
     const alwaysOnTop = store.get(`device.${deviceId}.alwaysOnTop`, true)
     const movable = store.get(`device.${deviceId}.movable`, false)
     const disablePress = store.get(`device.${deviceId}.disablePress`, false)
+    const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
     const autoHide = store.get(`device.${deviceId}.autoHide`, false)
     const hideEmptyKeys = store.get(`device.${deviceId}.hideEmptyKeys`, false)
     const backgroundColor = store.get(
@@ -161,6 +162,7 @@ export function createNewDevice(): string {
     store.set(`device.${newDeviceId}.bitmapSize`, 72) // Default bitmap size
     store.set(`device.${newDeviceId}.alwaysOnTop`, true) // Default to true
     store.set(`device.${newDeviceId}.movable`, true) // Default to true
+    store.set(`device.${newDeviceId}.dimOnLeave`, false) // Default to false
     store.set(`device.${newDeviceId}.disablePress`, false) // Default to false
     store.set(`device.${newDeviceId}.backgroundColor`, '#000000') // Default black
     store.set(`device.${newDeviceId}.backgroundOpacity`, 0.5) // Default semi-transparent

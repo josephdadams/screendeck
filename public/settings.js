@@ -80,6 +80,10 @@ window.addEventListener('DOMContentLoaded', () => {
                 'Disable Button Presses',
                 device.disablePress
             )
+            const dimOnLeaveInput = createCheckbox(
+                'Dim on Mouse Leave',
+                device.dimOnLeave || false
+            )
             const autoHideInput = createCheckbox(
                 'Auto Hide on Mouse Leave',
                 device.autoHide || false
@@ -142,6 +146,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 alwaysOnTopInput,
                 movableInput,
                 disablePressInput,
+                dimOnLeaveInput,
                 autoHideInput,
                 hideEmptyKeysInput,
             ].forEach((inputObj) => {
@@ -173,6 +178,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     alwaysOnTop: alwaysOnTopInput.input.checked,
                     movable: movableInput.input.checked,
                     disablePress: disablePressInput.input.checked,
+                    dimOnLeave: dimOnLeaveInput.input.checked,
                     autoHide: autoHideInput.input.checked,
                     hideEmptyKeys: hideEmptyKeysInput.input.checked,
                     backgroundColor: backgroundColorInput.value,
