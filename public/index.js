@@ -494,58 +494,9 @@ window.addEventListener('DOMContentLoaded', () => {
     function bindKeyEvents(key, i, keyConfig) {
         const isEncoder = keyConfig.isEncoder
         const stepSize = keyConfig.stepSize || 10
-
-        key.addEventListener('mousedown', (e) => {
-            if (e.button === 2) {
-                return
-            }
-
-            if (isEncoder) {
-                e.preventDefault()
-
-                let lastX = e.clientX
-
-                const onMove = (moveEvent) => {
-                    const deltaX = moveEvent.clientX - lastX
-                    lastX = moveEvent.clientX
-                    handleDirection(deltaX)
-                }
-
-                const onEnter = () => {
-                    window.focus()
-                }
-
-                const onUp = () => {
-                    window.removeEventListener('mousemove', onMove)
-                    window.removeEventListener('mouseup', onUp)
-                    window.removeEventListener('mouseenter', onEnter)
-                    key.classList.remove('rotateLeft', 'rotateRight')
-                }
-
-                window.addEventListener('mouseenter', onEnter)
-                window.addEventListener('mousemove', onMove)
-                window.addEventListener('mouseup', onUp)
-            } else {
-                activeKeys.add(i)
-                sendKeyPress(i, 'down')
-            }
-        })
-
-        key.addEventListener('mouseup', () => {
-            activeKeys.delete(i)
-            sendKeyPress(i, 'up')
-        })
-
-        const onWheel = (wheelEvent) => {
-            wheelEvent.preventDefault()
-            const delta = wheelEvent.deltaY > 0 ? stepSize : -stepSize
-            handleDirection(delta)
-        }
-
-        key.addEventListener('wheel', onWheel, { passive: false })
-
-        // Add context menu again
-        key.addEventListener('contextmenu', (e) => showContextMenu(e, i))
+        // Minimum movement (px) before an encoder interaction is treated as
+        // a rotation drag rather than a press-and-release (see #45).
+        const dragThreshold = 8
 
         let accumulatedDeltaX = 0
 
@@ -579,6 +530,151 @@ window.addEventListener('DOMContentLoaded', () => {
                 }, 250)
             }
         }
+
+        // Shared press-vs-drag tracking for an encoder interaction, used by
+        // both the mouse and touch code paths below. A quick tap/click that
+        // doesn't move (much) is treated as a plain button press/release; an
+        // actual drag rotates the encoder, exactly as it did before (#45).
+        const startEncoderInteraction = (startX) => {
+            let lastX = startX
+            let totalMovement = 0
+            let dragStarted = false
+
+            const onMove = (currentX) => {
+                const deltaX = currentX - lastX
+                lastX = currentX
+                totalMovement += Math.abs(deltaX)
+
+                if (!dragStarted && totalMovement >= dragThreshold) {
+                    dragStarted = true
+                }
+
+                if (dragStarted) {
+                    handleDirection(deltaX)
+                }
+            }
+
+            const onEnd = () => {
+                key.classList.remove('rotateLeft', 'rotateRight')
+
+                if (!dragStarted) {
+                    sendKeyPress(i, 'down')
+                    sendKeyPress(i, 'up')
+                }
+            }
+
+            return { onMove, onEnd }
+        }
+
+        key.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                return
+            }
+
+            if (isEncoder) {
+                e.preventDefault()
+
+                const interaction = startEncoderInteraction(e.clientX)
+
+                const onMouseMove = (moveEvent) => {
+                    interaction.onMove(moveEvent.clientX)
+                }
+
+                const onEnter = () => {
+                    window.focus()
+                }
+
+                const onMouseUp = () => {
+                    window.removeEventListener('mousemove', onMouseMove)
+                    window.removeEventListener('mouseup', onMouseUp)
+                    window.removeEventListener('mouseenter', onEnter)
+                    interaction.onEnd()
+                }
+
+                window.addEventListener('mouseenter', onEnter)
+                window.addEventListener('mousemove', onMouseMove)
+                window.addEventListener('mouseup', onMouseUp)
+            } else {
+                activeKeys.add(i)
+                sendKeyPress(i, 'down')
+            }
+        })
+
+        key.addEventListener('mouseup', () => {
+            activeKeys.delete(i)
+            sendKeyPress(i, 'up')
+        })
+
+        // Touch support (#44, #50, #45): touchstart/touchmove/touchend mirror
+        // the mousedown/mousemove/mouseup handlers above. Calling
+        // preventDefault() on touchstart is what stops Chromium from
+        // synthesizing a long-press `contextmenu` event (which would
+        // otherwise pop open the key configuration menu on a normal
+        // press-and-hold instead of registering the press), and it also
+        // suppresses the synthetic mouse events Chromium/Electron would
+        // otherwise fire after the touch sequence, avoiding double-firing.
+        key.addEventListener(
+            'touchstart',
+            (e) => {
+                e.preventDefault()
+
+                const touch = e.touches[0]
+                if (!touch) {
+                    return
+                }
+
+                if (isEncoder) {
+                    const interaction = startEncoderInteraction(touch.clientX)
+
+                    const onTouchMove = (moveEvent) => {
+                        const moveTouch = moveEvent.touches[0]
+                        if (moveTouch) {
+                            interaction.onMove(moveTouch.clientX)
+                        }
+                    }
+
+                    const onTouchEnd = () => {
+                        window.removeEventListener('touchmove', onTouchMove)
+                        window.removeEventListener('touchend', onTouchEnd)
+                        window.removeEventListener('touchcancel', onTouchEnd)
+                        interaction.onEnd()
+                    }
+
+                    window.addEventListener('touchmove', onTouchMove, {
+                        passive: false,
+                    })
+                    window.addEventListener('touchend', onTouchEnd)
+                    window.addEventListener('touchcancel', onTouchEnd)
+                } else {
+                    activeKeys.add(i)
+                    sendKeyPress(i, 'down')
+                }
+            },
+            { passive: false }
+        )
+
+        key.addEventListener(
+            'touchend',
+            (e) => {
+                if (!isEncoder) {
+                    e.preventDefault()
+                    activeKeys.delete(i)
+                    sendKeyPress(i, 'up')
+                }
+            },
+            { passive: false }
+        )
+
+        const onWheel = (wheelEvent) => {
+            wheelEvent.preventDefault()
+            const delta = wheelEvent.deltaY > 0 ? stepSize : -stepSize
+            handleDirection(delta)
+        }
+
+        key.addEventListener('wheel', onWheel, { passive: false })
+
+        // Add context menu again
+        key.addEventListener('contextmenu', (e) => showContextMenu(e, i))
     }
 
     function closeContextMenu() {
@@ -848,6 +944,23 @@ window.addEventListener('DOMContentLoaded', () => {
     })
 
     window.addEventListener('blur', () => {
+        activeKeys.forEach((keyIndex) => {
+            sendKeyPress(keyIndex, 'up')
+        })
+        activeKeys.clear()
+    })
+
+    // Safety net mirroring the mouseup/blur handlers above, in case a touch
+    // sequence ends (or is cancelled by the system) without the per-key
+    // touchend handler firing, which would otherwise leave a key "stuck" down.
+    window.addEventListener('touchend', () => {
+        activeKeys.forEach((keyIndex) => {
+            sendKeyPress(keyIndex, 'up')
+        })
+        activeKeys.clear()
+    })
+
+    window.addEventListener('touchcancel', () => {
         activeKeys.forEach((keyIndex) => {
             sendKeyPress(keyIndex, 'up')
         })
