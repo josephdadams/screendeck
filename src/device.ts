@@ -69,6 +69,11 @@ export function createDeviceWindow(deviceId: string) {
         },
     })
 
+    // On macOS, keep the overlay visible across all Spaces/desktops and over full-screen apps
+    if (process.platform === 'darwin') {
+        win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    }
+
     win.loadFile(path.join(__dirname, '../public/index.html'), {
         query: { deviceId },
     })
