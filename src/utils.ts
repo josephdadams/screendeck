@@ -84,7 +84,11 @@ export function createSatellite() {
             }
 
             updateTrayMenu()
-            showWindows()
+
+            // On initial startup, ignore any persisted per-device `hidden` flags so
+            // decks the user previously closed don't stay hidden forever (issues #53, #49).
+            const showOnStartup = store.get('showOnStartup', true) as boolean
+            showWindows(showOnStartup)
 
             global.deviceWindows.forEach((win) => {
                 win.webContents.send('satelliteStatus', 'connected')

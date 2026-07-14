@@ -14,9 +14,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 10
             )
 
+            const showOnStartup =
+                document.getElementById('showOnStartup').checked
+
             await window.electronAPI.saveSettings({
                 companionIP: ip,
                 companionPort: port,
+                showOnStartup: showOnStartup,
             })
 
             // Show status message
@@ -41,6 +45,8 @@ window.addEventListener('DOMContentLoaded', () => {
             settings.companionIP || '127.0.0.1'
         document.getElementById('companionPort').value =
             settings.companionPort || 16622
+        document.getElementById('showOnStartup').checked =
+            settings.showOnStartup !== false
     }
 
     async function loadDevices() {
