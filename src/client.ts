@@ -27,7 +27,7 @@ const PING_INTERVAL = 100
 const RECONNECT_DELAY = 1000
 const RECONNECT_DELAY_UNSUPPORTED = 30000
 
-const MINIMUM_PROTOCOL_VERSION = '1.7.0' // Companion 3.4
+export const MINIMUM_PROTOCOL_VERSION = '1.7.0' // Companion 3.4
 
 function parseLineParameters(line: string): Record<string, string | boolean> {
     const makeSafe = (index: number): number => {
@@ -107,6 +107,7 @@ export type CompanionSatelliteClientEvents = {
     variableValue: [{ deviceId: string; name: string; value: string }]
     lockedState: [{ deviceId: string; locked: boolean; characterCount: number }]
     deviceErrored: [{ deviceId: string; message: string }]
+    unsupportedVersion: [{ companionVersion: string | null; apiVersion: string | null }]
 }
 
 export class CompanionSatelliteClient
@@ -446,6 +447,10 @@ export class CompanionSatelliteClient
             console.log(
                 `Connected to unsupported Companion version. Companion ${this._companionVersion}, API ${this._companionApiVersion}`
             )
+            this.emit('unsupportedVersion', {
+                companionVersion: this._companionVersion,
+                apiVersion: this._companionApiVersion,
+            })
             this.socket?.end()
             return
         }

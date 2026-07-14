@@ -3,7 +3,7 @@ import ShortUniqueId from 'short-uuid'
 import path from 'path'
 import { createNewDevice, createDeviceWindows, showWindows } from './device' // Function to create a new device
 import { resizeWindowForDevice } from './device'
-import { CompanionSatelliteClient } from './client' // Your new client class
+import { CompanionSatelliteClient, MINIMUM_PROTOCOL_VERSION } from './client' // Your new client class
 import { updateTrayMenu } from './tray'
 import { ProfilesStore, Profile } from './types' // Import your types
 import { showNotification } from './notification'
@@ -27,6 +27,11 @@ export function initializeDeviceIds() {
 // Companion Satellite Client
 // ===========================
 
+// Tracks whether we've already shown a notification for the current
+// "unsupported Companion version" streak, so we don't spam the user with a
+// fresh OS notification on every reconnect attempt (every 30s, forever).
+let unsupportedVersionNotified = false
+
 export function createSatellite() {
     // Create the CompanionSatelliteClient
     if (global.satelliteClient?.connected) {
@@ -42,8 +47,26 @@ export function createSatellite() {
         console.error(`[Satellite Error] ${err}`)
     )
 
+    global.satelliteClient.on('unsupportedVersion', ({ companionVersion, apiVersion }) => {
+        console.error(
+            `[Satellite] Unsupported Companion version. Companion ${companionVersion}, API ${apiVersion}`
+        )
+
+        if (!unsupportedVersionNotified) {
+            unsupportedVersionNotified = true
+            showNotification(
+                'Companion Version Not Supported',
+                `Detected Companion ${companionVersion ?? 'unknown'} (API ${apiVersion ?? 'unknown'}), which is too old for ScreenDeck. ` +
+                    `Please update Companion to a version supporting API ${MINIMUM_PROTOCOL_VERSION} or newer.`
+            )
+        }
+    })
+
     global.satelliteClient.on('connected', () => {
         console.log('[Satellite] Connected Event Received')
+        // A successful connection means we're no longer in an "unsupported
+        // version" streak, so reset the notification guard for next time.
+        unsupportedVersionNotified = false
         // Register devices
         setTimeout(() => {
             const deviceIds = store.get('deviceIds') as string[] | []
