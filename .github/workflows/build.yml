@@ -9,6 +9,11 @@ permissions:
     contents: write
 
 jobs:
+    # NOTE: The ubuntu-latest leg of this matrix only produces Linux x64
+    # artifacts (see package.json's build.linux.target arch lists). arm64
+    # Linux builds are handled natively by the build_linux_arm64 job below —
+    # cross-building arm64 on this x64 runner previously produced a corrupted,
+    # oversized app.asar (see issue #55).
     build_desktop:
         name: Build Desktop on ${{ matrix.os }}
         runs-on: ${{ matrix.os }}
@@ -58,9 +63,15 @@ jobs:
                   APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
                   APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
-    build_rpi:
-        name: Build for Raspberry Pi (ARM64)
-        runs-on: ubuntu-latest
+    # Native arm64 build for Raspberry Pi. This runs on a real arm64 host
+    # (GitHub's hosted ubuntu-24.04-arm runner) instead of cross-compiling
+    # arm64 on x64 hardware, which previously produced a corrupted,
+    # ~4x-oversized app.asar (bad package.json offset, integrity hash
+    # mismatch) that silently failed to launch on actual Raspberry Pi
+    # hardware. See issue #55.
+    build_linux_arm64:
+        name: Build for Raspberry Pi (native ARM64)
+        runs-on: ubuntu-24.04-arm
         steps:
             - uses: actions/checkout@v3
 
@@ -72,23 +83,42 @@ jobs:
             - name: Install dependencies
               run: yarn install
 
-            - name: Build Electron App for ARM64
-              run: |
-                  yarn build
-                  yarn run electron-builder --linux --arm64
+            - name: Build App (typescript)
+              run: yarn build
 
-            - name: Rename RPi Artifact
+            - name: Build Electron App for ARM64 (AppImage + deb)
+              run: |
+                  yarn run electron-builder --linux AppImage deb --arm64
+
+            - name: Verify app.asar integrity
+              run: |
+                  set -euo pipefail
+                  ASAR_PATH=$(find dist -name 'app.asar' -print -quit)
+                  if [ -z "$ASAR_PATH" ]; then
+                    echo "::error::Could not find app.asar under dist/ - arm64 build output is missing"
+                    exit 1
+                  fi
+                  echo "Checking $ASAR_PATH"
+                  rm -rf /tmp/asar-check
+                  npx --yes asar extract "$ASAR_PATH" /tmp/asar-check
+                  node -e "JSON.parse(require('fs').readFileSync('/tmp/asar-check/package.json', 'utf8'))"
+                  echo "app.asar package.json is valid JSON"
+
+            - name: Rename RPi Artifacts
               run: |
                   VERSION=${{ github.ref_name }}
                   mkdir release
                   mv dist/*.AppImage "release/screendeck-rpi-arm64-$VERSION.AppImage"
+                  mv dist/*.deb "release/screendeck-arm64-$VERSION.deb"
 
             - name: Upload RPi Build to Draft Release
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ github.ref_name }}
                   name: 'ScreenDeck v${{ github.ref_name }}'
-                  files: release/screendeck-rpi-arm64-${{ github.ref_name }}.AppImage
+                  files: |
+                      release/screendeck-rpi-arm64-${{ github.ref_name }}.AppImage
+                      release/screendeck-arm64-${{ github.ref_name }}.deb
                   draft: true
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
