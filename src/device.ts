@@ -129,11 +129,16 @@ export function createDeviceWindow(deviceId: string) {
 }
 
 // Show all device windows
-export function showWindows() {
+// When `ignoreHiddenState` is true, every device window is shown regardless of
+// its persisted per-device `hidden` flag. This is used on initial app startup so
+// that a device the user previously closed (which sets `hidden = true`) doesn't
+// stay hidden forever. During normal operation (tray Hide/Show, in-window close
+// button, etc.) callers should omit the argument to keep respecting `hidden`.
+export function showWindows(ignoreHiddenState = false) {
     global.deviceWindows.forEach((win, deviceId) => {
         console.log(`Showing window for deviceId: ${deviceId}`)
         const hidden = store.get(`device.${deviceId}.hidden`, false)
-        if (!hidden) {
+        if (ignoreHiddenState || !hidden) {
             win.show()
             win.focus()
             win.webContents.send('windowShown', { deviceId })
