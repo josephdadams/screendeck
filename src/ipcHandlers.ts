@@ -265,6 +265,10 @@ export function initializeIpcHandlers() {
                 `device.${deviceId}.key.${keyIndex}.isSticky`,
                 false
             ),
+            verticalEncoder: store.get(
+                `device.${deviceId}.key.${keyIndex}.verticalEncoder`,
+                false
+            ),
         }
     })
 
@@ -284,11 +288,19 @@ export function initializeIpcHandlers() {
                     `device.${deviceId}.key.${keyIndex}.isSticky`,
                     false
                 ),
+                verticalEncoder: store.get(
+                    `device.${deviceId}.key.${keyIndex}.verticalEncoder`,
+                    false
+                ),
             }
             const merged = { ...existing, ...config }
             store.set(`device.${deviceId}.key.${keyIndex}.isEncoder`, merged.isEncoder)
             store.set(`device.${deviceId}.key.${keyIndex}.stepSize`, merged.stepSize)
             store.set(`device.${deviceId}.key.${keyIndex}.isSticky`, merged.isSticky)
+            store.set(
+                `device.${deviceId}.key.${keyIndex}.verticalEncoder`,
+                merged.verticalEncoder
+            )
         }
     )
 
