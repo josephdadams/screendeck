@@ -17,6 +17,7 @@ import {
     showDeviceLabels,
     resizeWindowForDevice,
     applyResizeConstraints,
+    COLLAPSED_HEIGHT,
 } from './device' // Import the device ID creation function
 import { store } from './store'
 
@@ -571,6 +572,50 @@ export function initializeIpcHandlers() {
         console.log(`Device ${deviceId} reset to defaults.`)
 
         return defaultConfig
+    })
+
+    // Double-click the drag handle collapses a device down to just its top
+    // strip, or restores it back to its full grid size (issue #40). Mutually
+    // exclusive with resizing (#13): while collapsed, resizing is disabled
+    // and the aspect-ratio lock is released, both restored on expand.
+    ipcMain.handle('toggleDeviceCollapsed', (_event, deviceId) => {
+        const win = global.deviceWindows.get(deviceId)
+        if (!win) return false
+
+        const collapsed = !store.get(`device.${deviceId}.collapsed`, false)
+        store.set(`device.${deviceId}.collapsed`, collapsed)
+
+        const { x, y, width } = win.getBounds()
+        const resizable = store.get(
+            `device.${deviceId}.resizable`,
+            false
+        ) as boolean
+
+        if (collapsed) {
+            if (resizable) {
+                win.setAspectRatio(0)
+            }
+            win.setResizable(false)
+            win.setBounds({ x, y, width, height: COLLAPSED_HEIGHT })
+        } else {
+            const columnCount = store.get(`device.${deviceId}.columnCount`, 8)
+            const rowCount = store.get(`device.${deviceId}.rowCount`, 4)
+            const bitmapSize = store.get(`device.${deviceId}.bitmapSize`, 72)
+            const { height } = calculateWindowSize(
+                columnCount,
+                rowCount,
+                bitmapSize
+            )
+
+            win.setBounds({ x, y, width, height })
+
+            if (resizable) {
+                win.setResizable(true)
+                applyResizeConstraints(win, columnCount, rowCount)
+            }
+        }
+
+        return collapsed
     })
 
     ipcMain.handle('deleteDevice', (_event, deviceId) => {

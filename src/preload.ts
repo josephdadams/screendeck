@@ -86,6 +86,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resetDeviceToDefaults: (deviceId: string) =>
         ipcRenderer.invoke('resetDeviceToDefaults', deviceId),
 
+    // Collapse/expand a device window (double-click its drag handle)
+    toggleDeviceCollapsed: (deviceId: string) =>
+        ipcRenderer.invoke('toggleDeviceCollapsed', deviceId),
+
     // Get the current window bounds for a device's keypad window
     getKeypadBounds: (deviceId: string) =>
         ipcRenderer.invoke('getKeypadBounds', deviceId),

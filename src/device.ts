@@ -24,6 +24,7 @@ export function createDeviceWindow(deviceId: string) {
     const alwaysOnTop = store.get(`device.${deviceId}.alwaysOnTop`, true)
     const movable = store.get(`device.${deviceId}.movable`, false)
     const resizable = store.get(`device.${deviceId}.resizable`, false)
+    const collapsed = store.get(`device.${deviceId}.collapsed`, false)
     const disablePress = store.get(`device.${deviceId}.disablePress`, false)
     const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
     const autoHide = store.get(`device.${deviceId}.autoHide`, false)
@@ -51,13 +52,18 @@ export function createDeviceWindow(deviceId: string) {
 
     const win = new BrowserWindow({
         width: width,
-        height: height,
+        // If this device was collapsed when the app last quit, launch
+        // already collapsed instead of flashing full-size first (#40).
+        height: collapsed ? COLLAPSED_HEIGHT : height,
         x: x,
         y: y,
         transparent: true,
         frame: false,
         alwaysOnTop: alwaysOnTop,
-        resizable: resizable,
+        // Resizing and collapsing fight each other (aspect-ratio lock vs. a
+        // tiny fixed collapsed height), so a collapsed window is never
+        // resizable - toggleDeviceCollapsed() restores this on expand.
+        resizable: resizable && !collapsed,
         skipTaskbar: true,
         movable: movable,
         hasShadow: false,
@@ -76,7 +82,7 @@ export function createDeviceWindow(deviceId: string) {
         win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
     }
 
-    if (resizable) {
+    if (resizable && !collapsed) {
         applyResizeConstraints(win, columnCount, rowCount)
     }
 
@@ -268,6 +274,10 @@ export function calculateWindowSize(
 // slivers or growing to unreasonably large squares.
 export const MIN_BITMAP_SIZE = 30
 export const MAX_BITMAP_SIZE = 200
+
+// Window height when a device is collapsed (issue #40) - just tall enough
+// to show the drag handle strip so it stays grabbable/double-clickable.
+export const COLLAPSED_HEIGHT = 36
 
 // Locks a resizable device window's aspect ratio to the key grid's
 // columns:rows so OS resize handles keep every key square, and clamps the
