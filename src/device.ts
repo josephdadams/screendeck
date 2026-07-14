@@ -155,7 +155,15 @@ export function showWindows(ignoreHiddenState = false) {
     global.deviceWindows.forEach((win, deviceId) => {
         console.log(`Showing window for deviceId: ${deviceId}`)
         const hidden = store.get(`device.${deviceId}.hidden`, false)
+        const edgeReveal = store.get(`device.${deviceId}.edgeReveal`, false)
         if (ignoreHiddenState || !hidden) {
+            // An edgeReveal device isn't force-shown here (#10) - it starts
+            // hidden and the poll loop in startEdgeRevealPolling() reveals
+            // it when the cursor nears its corner instead.
+            if (edgeReveal) {
+                win.hide()
+                return
+            }
             win.show()
             win.focus()
             win.webContents.send('windowShown', { deviceId })
@@ -237,6 +245,7 @@ export function createNewDevice(): string {
     store.set(`device.${newDeviceId}.movable`, true) // Default to true
     store.set(`device.${newDeviceId}.resizable`, false) // Default to false
     store.set(`device.${newDeviceId}.dimOnLeave`, false) // Default to false
+    store.set(`device.${newDeviceId}.edgeReveal`, false) // Default to false
     store.set(`device.${newDeviceId}.disablePress`, false) // Default to false
     store.set(`device.${newDeviceId}.backgroundColor`, '#000000') // Default black
     store.set(`device.${newDeviceId}.backgroundOpacity`, 0.5) // Default semi-transparent
@@ -377,4 +386,114 @@ export function resizeWindowForDevice(deviceId: string) {
         y: win.getBounds().y,
     })
     win.setResizable(false)
+}
+
+// --- Edge-reveal support (#10) ---
+//
+// A device with `edgeReveal` enabled stays hidden until the cursor
+// approaches whichever screen corner its window is closest to, then shows
+// without stealing focus and hides again a short delay after the cursor
+// moves away from both the corner and the window itself.
+
+const EDGE_REVEAL_POLL_INTERVAL = 150 // ms between cursor checks
+const EDGE_REVEAL_ZONE_SIZE = 40 // px from the exact screen corner
+const EDGE_REVEAL_HIDE_DELAY = 500 // ms cursor must be away before hiding
+
+const edgeRevealHideTimers = new Map<string, NodeJS.Timeout>()
+
+interface ScreenPoint {
+    x: number
+    y: number
+}
+
+interface ScreenRect {
+    x: number
+    y: number
+    width: number
+    height: number
+}
+
+// Whichever corner of `workArea` the window's center is closest to.
+function getNearestCorner(
+    windowBounds: ScreenRect,
+    workArea: ScreenRect
+): ScreenPoint {
+    const centerX = windowBounds.x + windowBounds.width / 2
+    const centerY = windowBounds.y + windowBounds.height / 2
+    const isLeft = centerX < workArea.x + workArea.width / 2
+    const isTop = centerY < workArea.y + workArea.height / 2
+
+    return {
+        x: isLeft ? workArea.x : workArea.x + workArea.width,
+        y: isTop ? workArea.y : workArea.y + workArea.height,
+    }
+}
+
+function isPointNearCorner(
+    point: ScreenPoint,
+    corner: ScreenPoint,
+    zoneSize: number
+): boolean {
+    return (
+        Math.abs(point.x - corner.x) <= zoneSize &&
+        Math.abs(point.y - corner.y) <= zoneSize
+    )
+}
+
+function isPointInBounds(point: ScreenPoint, bounds: ScreenRect): boolean {
+    return (
+        point.x >= bounds.x &&
+        point.x <= bounds.x + bounds.width &&
+        point.y >= bounds.y &&
+        point.y <= bounds.y + bounds.height
+    )
+}
+
+// Starts a single persistent poll loop covering every device window, rather
+// than one timer per device - cheap no-op for devices without edgeReveal
+// enabled. Call once at app startup.
+export function startEdgeRevealPolling() {
+    setInterval(() => {
+        const cursor = screen.getCursorScreenPoint()
+
+        global.deviceWindows.forEach((win, deviceId) => {
+            const edgeReveal = store.get(`device.${deviceId}.edgeReveal`, false)
+            if (!edgeReveal) return
+
+            // Manually hidden via the tray/close button takes precedence -
+            // edgeReveal doesn't reveal a device the user explicitly hid.
+            const hidden = store.get(`device.${deviceId}.hidden`, false)
+            if (hidden) return
+
+            const windowBounds = win.getBounds()
+            const display = screen.getDisplayNearestPoint({
+                x: windowBounds.x,
+                y: windowBounds.y,
+            })
+            const corner = getNearestCorner(windowBounds, display.workArea)
+            const nearCorner = isPointNearCorner(
+                cursor,
+                corner,
+                EDGE_REVEAL_ZONE_SIZE
+            )
+            const overWindow = isPointInBounds(cursor, windowBounds)
+
+            if (nearCorner || overWindow) {
+                const existingTimer = edgeRevealHideTimers.get(deviceId)
+                if (existingTimer) {
+                    clearTimeout(existingTimer)
+                    edgeRevealHideTimers.delete(deviceId)
+                }
+                if (!win.isVisible()) {
+                    win.showInactive()
+                }
+            } else if (win.isVisible() && !edgeRevealHideTimers.has(deviceId)) {
+                const timer = setTimeout(() => {
+                    win.hide()
+                    edgeRevealHideTimers.delete(deviceId)
+                }, EDGE_REVEAL_HIDE_DELAY)
+                edgeRevealHideTimers.set(deviceId, timer)
+            }
+        })
+    }, EDGE_REVEAL_POLL_INTERVAL)
 }
