@@ -345,6 +345,37 @@ input[type='color'] {
     background: #f44336;
 }
 
+/* Always-visible grip handle for repositioning the window when the key
+   grid is fully packed and leaves no empty background area to drag from. */
+.drag-handle {
+    -webkit-app-region: drag;
+    pointer-events: auto;
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 6px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.5);
+    background-image: repeating-linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0.6) 0px,
+        rgba(255, 255, 255, 0.6) 3px,
+        transparent 3px,
+        transparent 6px
+    );
+    z-index: 100;
+    cursor: move;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+}
+
+.window-container:hover .drag-handle,
+.drag-handle:hover {
+    opacity: 0.9;
+}
+
 .keypad.identify-highlight {
     outline: 3px solid yellow;
     box-shadow: 0 0 30px 10px rgba(255, 255, 0, 0.8);
