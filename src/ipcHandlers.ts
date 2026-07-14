@@ -59,6 +59,9 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
         if (config.disablePress !== undefined) {
             win.webContents.send('disablePress', Boolean(config.disablePress))
         }
+        if (config.dimOnLeave !== undefined) {
+            win.webContents.send('dimOnLeave', Boolean(config.dimOnLeave))
+        }
         if (config.autoHide !== undefined) {
             win.webContents.send('autoHide', Boolean(config.autoHide))
         }
@@ -149,6 +152,7 @@ export function initializeIpcHandlers() {
         const alwaysOnTop = store.get(`device.${deviceId}.alwaysOnTop`, false)
         const movable = store.get(`device.${deviceId}.movable`, true)
         const disablePress = store.get(`device.${deviceId}.disablePress`, false)
+        const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
         const autoHide = store.get(`device.${deviceId}.autoHide`, false)
         const hideEmptyKeys = store.get(
             `device.${deviceId}.hideEmptyKeys`,
@@ -170,6 +174,7 @@ export function initializeIpcHandlers() {
             alwaysOnTop,
             movable,
             disablePress,
+            dimOnLeave,
             autoHide,
             hideEmptyKeys,
             backgroundColor,
@@ -452,6 +457,7 @@ export function initializeIpcHandlers() {
             alwaysOnTop: store.get(`device.${id}.alwaysOnTop`, false),
             movable: store.get(`device.${id}.movable`, true),
             disablePress: store.get(`device.${id}.disablePress`, false),
+            dimOnLeave: store.get(`device.${id}.dimOnLeave`, false),
             autoHide: store.get(`device.${id}.autoHide`, false),
             hideEmptyKeys: store.get(`device.${id}.hideEmptyKeys`, false),
             backgroundColor: store.get(
@@ -475,6 +481,7 @@ export function initializeIpcHandlers() {
             alwaysOnTop: true,
             movable: true,
             disablePress: false,
+            dimOnLeave: false,
             backgroundColor: '#000000',
             backgroundOpacity: 0.5,
         }

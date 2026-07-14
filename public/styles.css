@@ -8,13 +8,35 @@ body {
     align-items: center;
     height: 100vh;
     background: transparent;
+    transition: opacity 0.2s ease;
+}
+
+body.dimmed {
+    opacity: 0.2;
+    transition: opacity 0.2s ease;
+}
+
+#mouseTracker {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+    background: transparent;
+}
+
+#dragRegion {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    -webkit-app-region: drag; /* ✅ Only this is draggable */
 }
 
 html,
 body {
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: auto;
     pointer-events: auto;
     background-color: transparent;
 }

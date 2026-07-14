@@ -34,14 +34,22 @@ window.addEventListener('DOMContentLoaded', () => {
     let initialBackground = null
     let initialOpacity = null
 
+    let globalDimOnLeave = false
     let globalAutoHideOnLeave = false
     let globalHideEmptyKeys = false
 
     // Request config from main process
     window.electronAPI.getDeviceConfig(deviceId).then((config) => {
-        const { autoHide, hideEmptyKeys, backgroundColor, backgroundOpacity } =
-            config
+        const {
+            dimOnLeave,
+            autoHide,
+            hideEmptyKeys,
+            backgroundColor,
+            backgroundOpacity,
+        } = config
 
+        globalDimOnLeave = dimOnLeave || false
+        configureDimOnLeave(globalDimOnLeave)
         globalAutoHideOnLeave = autoHide || false
         globalHideEmptyKeys = hideEmptyKeys || false
 
@@ -123,6 +131,8 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         if (keypad) {
+            const tracker = document.getElementById('mouseTracker')
+
             window.addEventListener('mouseleave', () => {
                 const closeButton = document.getElementById('closeButton')
                 if (closeButton) {
@@ -135,7 +145,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     deviceId
                 )
                 if (globalAutoHideOnLeave) {
-                    hideTimeout = setTimeout(hideKeypad, 500) // small delay
+                    //hideTimeout = setTimeout(hideKeypad, 500) // small delay
                 }
             })
 
@@ -146,7 +156,8 @@ window.addEventListener('DOMContentLoaded', () => {
                     closeButton.style.pointerEvents = 'auto'
                 }
 
-                console.log(
+                //auto hide stuff
+                /*console.log(
                     'Mouse entered window, showing keypad for device:',
                     deviceId
                 )
@@ -156,20 +167,21 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
                 if (globalAutoHideOnLeave) {
                     showKeypad()
-                }
+                }*/
             })
 
             window.addEventListener('mousemove', (e) => {
                 const threshold = 50 // pixels
 
-                if (
+                //auto hide stuff
+                /*if (
                     e.clientX < threshold ||
                     e.clientY < threshold ||
                     e.clientX > window.innerWidth - threshold ||
                     e.clientY > window.innerHeight - threshold
                 ) {
                     showKeypad()
-                }
+                }*/
             })
         }
 
@@ -614,6 +626,11 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     })
 
+    window.electronAPI.onDimOnLeave((_, dimOnLeave) => {
+        globalDimOnLeave = dimOnLeave
+        configureDimOnLeave(dimOnLeave)
+    })
+
     window.electronAPI.onAutoHide((_, autoHide) => {
         globalAutoHideOnLeave = autoHide
     })
@@ -833,4 +850,30 @@ window.addEventListener('DOMContentLoaded', () => {
         })
         activeKeys.clear()
     })
+
+    function onDimMouseLeave() {
+        console.log('Mouse left container, dimming')
+        document.body.classList.add('dimmed')
+    }
+
+    function onDimMouseEnter() {
+        console.log('Mouse entered container, undimming')
+        document.body.classList.remove('dimmed')
+    }
+
+    function configureDimOnLeave(dimOnLeave) {
+        console.log('Configuring dim on leave:', dimOnLeave)
+
+        // Remove any previously-attached listeners first so repeated calls
+        // (e.g. re-saving this setting) don't stack duplicate listeners.
+        document.body.removeEventListener('mouseleave', onDimMouseLeave)
+        document.body.removeEventListener('mouseenter', onDimMouseEnter)
+
+        if (dimOnLeave) {
+            document.body.addEventListener('mouseleave', onDimMouseLeave)
+            document.body.addEventListener('mouseenter', onDimMouseEnter)
+        } else {
+            document.body.classList.remove('dimmed')
+        }
+    }
 })

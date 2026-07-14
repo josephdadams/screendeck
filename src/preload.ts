@@ -40,6 +40,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('disablePress', (event, data) => callback(event, data))
     },
 
+    onDimOnLeave: (callback: any) => {
+        ipcRenderer.on('dimOnLeave', (event, data) => callback(event, data))
+    },
+
     onAutoHide: (callback: any) => {
         ipcRenderer.on('autoHide', (event, data) => callback(event, data))
     },
