@@ -306,6 +306,7 @@ window.addEventListener('DOMContentLoaded', () => {
         menu.innerHTML = `
     <div class="menu-item" data-action="encoder">Set to Encoder Mode</div>
     <div class="menu-item" data-action="set-step-size">Set Step Size...</div>
+    <div class="menu-item" data-action="toggle-encoder-axis">Toggle Vertical/Horizontal Drag</div>
     <div class="menu-item" data-action="button">Set to Button Mode (Normal)</div>
     <div class="menu-item" data-action="button-sticky">Set to Sticky Button Mode</div>
     <div class="menu-item" data-action="clear-sticky">Clear Sticky Mode</div>
@@ -391,6 +392,23 @@ window.addEventListener('DOMContentLoaded', () => {
                                     isEncoder: current.isEncoder,
                                     isSticky: current.isSticky,
                                     stepSize,
+                                },
+                            })
+                            .then(() => refreshKey(deviceId, keyIndex))
+                    })
+            } else if (action === 'toggle-encoder-axis') {
+                window.electronAPI
+                    .getKeyConfig({ deviceId, keyIndex })
+                    .then((current) => {
+                        window.electronAPI
+                            .updateKeyConfig({
+                                deviceId,
+                                keyIndex,
+                                config: {
+                                    isEncoder: current.isEncoder,
+                                    isSticky: current.isSticky,
+                                    stepSize: current.stepSize,
+                                    verticalEncoder: !current.verticalEncoder,
                                 },
                             })
                             .then(() => refreshKey(deviceId, keyIndex))
@@ -494,6 +512,14 @@ window.addEventListener('DOMContentLoaded', () => {
     function bindKeyEvents(key, i, keyConfig) {
         const isEncoder = keyConfig.isEncoder
         const stepSize = keyConfig.stepSize || 10
+        // When enabled, dragging up/down rotates the encoder instead of
+        // left/right (#46). Dragging up increases (rotateRight), dragging
+        // down decreases (rotateLeft) - negating clientY makes "up" produce
+        // a positive delta, matching the same sign convention horizontal
+        // drag already uses.
+        const verticalEncoder = keyConfig.verticalEncoder || false
+        const getAxisValue = (clientX, clientY) =>
+            verticalEncoder ? -clientY : clientX
         // Minimum movement (px) before an encoder interaction is treated as
         // a rotation drag rather than a press-and-release (see #45).
         const dragThreshold = 8
@@ -574,10 +600,14 @@ window.addEventListener('DOMContentLoaded', () => {
             if (isEncoder) {
                 e.preventDefault()
 
-                const interaction = startEncoderInteraction(e.clientX)
+                const interaction = startEncoderInteraction(
+                    getAxisValue(e.clientX, e.clientY)
+                )
 
                 const onMouseMove = (moveEvent) => {
-                    interaction.onMove(moveEvent.clientX)
+                    interaction.onMove(
+                        getAxisValue(moveEvent.clientX, moveEvent.clientY)
+                    )
                 }
 
                 const onEnter = () => {
@@ -624,12 +654,19 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (isEncoder) {
-                    const interaction = startEncoderInteraction(touch.clientX)
+                    const interaction = startEncoderInteraction(
+                        getAxisValue(touch.clientX, touch.clientY)
+                    )
 
                     const onTouchMove = (moveEvent) => {
                         const moveTouch = moveEvent.touches[0]
                         if (moveTouch) {
-                            interaction.onMove(moveTouch.clientX)
+                            interaction.onMove(
+                                getAxisValue(
+                                    moveTouch.clientX,
+                                    moveTouch.clientY
+                                )
+                            )
                         }
                     }
 
