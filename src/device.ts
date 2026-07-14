@@ -23,6 +23,7 @@ export function createDeviceWindow(deviceId: string) {
     const bitmapSize = store.get(`device.${deviceId}.bitmapSize`, 72)
     const alwaysOnTop = store.get(`device.${deviceId}.alwaysOnTop`, true)
     const movable = store.get(`device.${deviceId}.movable`, false)
+    const resizable = store.get(`device.${deviceId}.resizable`, false)
     const disablePress = store.get(`device.${deviceId}.disablePress`, false)
     const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
     const autoHide = store.get(`device.${deviceId}.autoHide`, false)
@@ -56,7 +57,7 @@ export function createDeviceWindow(deviceId: string) {
         transparent: true,
         frame: false,
         alwaysOnTop: alwaysOnTop,
-        resizable: false,
+        resizable: resizable,
         skipTaskbar: true,
         movable: movable,
         hasShadow: false,
@@ -73,6 +74,10 @@ export function createDeviceWindow(deviceId: string) {
     // On macOS, keep the overlay visible across all Spaces/desktops and over full-screen apps
     if (process.platform === 'darwin') {
         win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    }
+
+    if (resizable) {
+        applyResizeConstraints(win, columnCount, rowCount)
     }
 
     win.loadFile(path.join(__dirname, '../public/index.html'), {
@@ -224,6 +229,7 @@ export function createNewDevice(): string {
     store.set(`device.${newDeviceId}.bitmapSize`, 72) // Default bitmap size
     store.set(`device.${newDeviceId}.alwaysOnTop`, true) // Default to true
     store.set(`device.${newDeviceId}.movable`, true) // Default to true
+    store.set(`device.${newDeviceId}.resizable`, false) // Default to false
     store.set(`device.${newDeviceId}.dimOnLeave`, false) // Default to false
     store.set(`device.${newDeviceId}.disablePress`, false) // Default to false
     store.set(`device.${newDeviceId}.backgroundColor`, '#000000') // Default black
@@ -255,6 +261,36 @@ export function calculateWindowSize(
         columnCount * KEY_WIDTH + (columnCount - 1) * GAP + PADDING * 2
     const height = rows * KEY_HEIGHT + (rows - 1) * GAP + PADDING * 2
     return { width, height }
+}
+
+// Bounds on the effective per-key bitmap size a resizable window is allowed
+// to be dragged to (issue #13) - keeps keys from shrinking to unusable
+// slivers or growing to unreasonably large squares.
+export const MIN_BITMAP_SIZE = 30
+export const MAX_BITMAP_SIZE = 200
+
+// Locks a resizable device window's aspect ratio to the key grid's
+// columns:rows so OS resize handles keep every key square, and clamps the
+// draggable size range to MIN_BITMAP_SIZE..MAX_BITMAP_SIZE per key (#13).
+export function applyResizeConstraints(
+    win: BrowserWindow,
+    columnCount: number,
+    rowCount: number
+) {
+    win.setAspectRatio(columnCount / rowCount)
+
+    const { width: minWidth, height: minHeight } = calculateWindowSize(
+        columnCount,
+        rowCount,
+        MIN_BITMAP_SIZE
+    )
+    const { width: maxWidth, height: maxHeight } = calculateWindowSize(
+        columnCount,
+        rowCount,
+        MAX_BITMAP_SIZE
+    )
+    win.setMinimumSize(minWidth, minHeight)
+    win.setMaximumSize(maxWidth, maxHeight)
 }
 
 //this is for the "hide empty keys" feature

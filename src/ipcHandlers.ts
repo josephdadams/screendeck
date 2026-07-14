@@ -16,6 +16,7 @@ import {
     calculateWindowSize,
     showDeviceLabels,
     resizeWindowForDevice,
+    applyResizeConstraints,
 } from './device' // Import the device ID creation function
 import { store } from './store'
 
@@ -58,6 +59,18 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
         if (config.movable !== undefined) {
             win.setMovable(Boolean(config.movable))
         }
+        if (config.resizable !== undefined) {
+            const isResizable = Boolean(config.resizable)
+            win.setResizable(isResizable)
+            if (isResizable) {
+                const columnCount = store.get(
+                    `device.${deviceId}.columnCount`,
+                    8
+                )
+                const rowCount = store.get(`device.${deviceId}.rowCount`, 4)
+                applyResizeConstraints(win, columnCount, rowCount)
+            }
+        }
         if (config.disablePress !== undefined) {
             win.webContents.send('disablePress', Boolean(config.disablePress))
         }
@@ -90,10 +103,19 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
             // On Windows, BrowserWindow.setSize() can behave unreliably on
             // resizable: false windows, sometimes only applying one axis of
             // the resize (see #33). Temporarily allow resizing around the
-            // call as a workaround.
+            // call as a workaround, then restore the device's actual
+            // configured resizable state (not unconditionally false - #13
+            // added a real per-device resizable setting).
+            const isResizable = store.get(
+                `device.${deviceId}.resizable`,
+                false
+            ) as boolean
             win.setResizable(true)
             win.setSize(width, height)
-            win.setResizable(false)
+            win.setResizable(isResizable)
+            if (isResizable) {
+                applyResizeConstraints(win, columnCount, rowCount)
+            }
 
             // If the Satellite client is connected and key properties changed, update the device config
             if (global.satelliteClient) {
@@ -122,6 +144,7 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
             win.webContents.send('rebuildGrid', {
                 columnCount,
                 rowCount,
+                bitmapSize,
             })
         }
 
@@ -164,6 +187,7 @@ export function initializeIpcHandlers() {
         const bitmapSize = store.get(`device.${deviceId}.bitmapSize`, 72)
         const alwaysOnTop = store.get(`device.${deviceId}.alwaysOnTop`, false)
         const movable = store.get(`device.${deviceId}.movable`, true)
+        const resizable = store.get(`device.${deviceId}.resizable`, false)
         const disablePress = store.get(`device.${deviceId}.disablePress`, false)
         const dimOnLeave = store.get(`device.${deviceId}.dimOnLeave`, false)
         const autoHide = store.get(`device.${deviceId}.autoHide`, false)
@@ -187,6 +211,7 @@ export function initializeIpcHandlers() {
             bitmapSize,
             alwaysOnTop,
             movable,
+            resizable,
             disablePress,
             dimOnLeave,
             autoHide,
@@ -509,6 +534,7 @@ export function initializeIpcHandlers() {
             bitmapSize: store.get(`device.${id}.bitmapSize`, 72),
             alwaysOnTop: store.get(`device.${id}.alwaysOnTop`, false),
             movable: store.get(`device.${id}.movable`, true),
+            resizable: store.get(`device.${id}.resizable`, false),
             disablePress: store.get(`device.${id}.disablePress`, false),
             dimOnLeave: store.get(`device.${id}.dimOnLeave`, false),
             autoHide: store.get(`device.${id}.autoHide`, false),
@@ -533,6 +559,7 @@ export function initializeIpcHandlers() {
             bitmapSize: 72,
             alwaysOnTop: true,
             movable: true,
+            resizable: false,
             disablePress: false,
             dimOnLeave: false,
             backgroundColor: '#000000',
