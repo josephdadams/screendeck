@@ -1,9 +1,18 @@
 window.addEventListener('DOMContentLoaded', () => {
     let modifiers = new Set()
     let primaryKey = ''
-    let deviceId = ''
-    let keyIndex = ''
+    let context = null // the HotkeyBinding this prompt is assigning: {kind, deviceId?, keyIndex?}
     let currentHotkeys = []
+
+    function describeBinding(binding) {
+        if (binding.kind === 'toggleAll') {
+            return 'Show/Hide All Screen Decks'
+        }
+        if (binding.kind === 'toggleDevice') {
+            return `Show/Hide ${binding.deviceId}`
+        }
+        return `Key ${binding.keyIndex} on ${binding.deviceId}`
+    }
 
     function showHotkeyError(message) {
         const errorEl = document.getElementById('hotkeyError')
@@ -23,17 +32,23 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Get initial data
     window.electronAPI.getHotkeyContext().then((data) => {
-        deviceId = data.deviceId
-        keyIndex = data.keyIndex
+        context = {
+            kind: data.kind,
+            deviceId: data.deviceId,
+            keyIndex: data.keyIndex,
+        }
 
-        document.getElementById('deviceId').textContent = deviceId
-        document.getElementById('keyIndex').textContent = keyIndex
+        document.getElementById('targetDescription').textContent =
+            describeBinding(context)
 
-        // If there's a bitmap, show it
+        // If there's a bitmap (per-key hotkeys only), show it
         const keyPreview = document.getElementById('keyPreview')
         keyPreview.innerHTML = '' // Clear previous content
-        if (data.imageBase64) {
+        if (data.kind === 'key' && data.imageBase64) {
+            keyPreview.style.display = 'block'
             renderBitmap(keyPreview, data.imageBase64)
+        } else {
+            keyPreview.style.display = 'none'
         }
 
         // Load current hotkeys
@@ -67,6 +82,17 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('hotkeyPreview').textContent = fullHotkey
     }
 
+    // Is `h` (an entry from currentHotkeys) bound to the exact same target
+    // this prompt is currently assigning? Used to exclude "self" when
+    // checking for conflicts (re-assigning a key its own hotkey isn't a
+    // conflict).
+    function isSameTarget(h) {
+        if (h.kind !== context.kind) return false
+        if (h.kind === 'toggleAll') return true
+        if (h.kind === 'toggleDevice') return h.deviceId === context.deviceId
+        return h.deviceId === context.deviceId && h.keyIndex === context.keyIndex
+    }
+
     function updateHotkeyList(hotkeys) {
         currentHotkeys = hotkeys || []
 
@@ -76,7 +102,7 @@ window.addEventListener('DOMContentLoaded', () => {
         hotkeys.forEach((h) => {
             const tr = document.createElement('tr')
 
-            // Create a cell for the bitmap canvas
+            // Create a cell for the bitmap canvas (per-key hotkeys only)
             const tdCanvas = document.createElement('td')
             const container = document.createElement('div')
             container.style.width = '32px'
@@ -85,7 +111,7 @@ window.addEventListener('DOMContentLoaded', () => {
             container.style.verticalAlign = 'middle'
             tdCanvas.appendChild(container)
 
-            if (h.imageBase64) {
+            if (h.kind === 'key' && h.imageBase64) {
                 renderBitmap(container, h.imageBase64)
             }
 
@@ -96,13 +122,9 @@ window.addEventListener('DOMContentLoaded', () => {
             tdHotkey.textContent = h.hotkey
             tr.appendChild(tdHotkey)
 
-            const tdDeviceId = document.createElement('td')
-            tdDeviceId.textContent = h.deviceId
-            tr.appendChild(tdDeviceId)
-
-            const tdKeyIndex = document.createElement('td')
-            tdKeyIndex.textContent = h.keyIndex
-            tr.appendChild(tdKeyIndex)
+            const tdTarget = document.createElement('td')
+            tdTarget.textContent = describeBinding(h)
+            tr.appendChild(tdTarget)
 
             // Add Clear button
             const tdButton = document.createElement('td')
@@ -111,6 +133,7 @@ window.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => {
                 window.electronAPI
                     .clearHotkey({
+                        kind: h.kind,
                         deviceId: h.deviceId,
                         keyIndex: h.keyIndex,
                         hotkey: h.hotkey,
@@ -141,25 +164,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const hotkeyStr = Array.from(modifiers).join('+') + `+${primaryKey}`
 
-        // Proactively check for conflicts with other keys/devices before
-        // even asking the main process to register the hotkey.
+        // Proactively check for conflicts with other targets before even
+        // asking the main process to register the hotkey.
         const conflict = currentHotkeys.find(
-            (h) =>
-                h.hotkey === hotkeyStr &&
-                (h.deviceId !== deviceId || h.keyIndex !== keyIndex)
+            (h) => h.hotkey === hotkeyStr && !isSameTarget(h)
         )
 
         if (conflict) {
             showHotkeyError(
-                `${hotkeyStr} is already assigned to key ${conflict.keyIndex} on ${conflict.deviceId}`
+                `${hotkeyStr} is already assigned to ${describeBinding(conflict)}`
             )
             return
         }
 
         window.electronAPI
             .assignHotkey({
-                deviceId,
-                keyIndex,
+                ...context,
                 hotkey: hotkeyStr,
             })
             .then((success) => {

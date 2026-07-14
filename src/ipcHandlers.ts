@@ -5,6 +5,8 @@ import { updateTrayMenu } from './tray'
 
 import {
     registerHotkey,
+    registerToggleAllHotkey,
+    registerToggleDeviceHotkey,
     unregisterHotkey,
     unregisterAllHotkeysForDevice,
 } from './hotkeys' // Import the hotkey registration function
@@ -308,38 +310,27 @@ export function initializeIpcHandlers() {
     })
 
     //HOTKEYS
-    ipcMain.handle(
-        'setHotkeyContext',
-        (_event, { deviceId, keyIndex, imageBase64 }) => {
-            global.hotkeyContext = { deviceId, keyIndex, imageBase64 }
-        }
-    )
+    ipcMain.handle('setHotkeyContext', (_event, context) => {
+        global.hotkeyContext = context
+    })
 
-    // Get key context for the hotkey prompt
+    // Get the current context for the hotkey prompt (what's being assigned:
+    // a specific key, "show/hide all", or "show/hide one device")
     ipcMain.handle('getHotkeyContext', (_event) => {
-        const context = global.hotkeyContext // deviceId, keyIndex, imageBase64
+        const context = global.hotkeyContext
 
         if (!context) {
             return undefined
         }
 
-        const { deviceId, keyIndex, imageBase64 } = context
-
-        // Get list of current hotkeys
+        // Get list of current hotkeys, of every kind
         const hotkeys = []
-        for (const [hotkey, mapping] of global.registeredHotkeys.entries()) {
-            hotkeys.push({
-                hotkey,
-                deviceId: mapping.deviceId,
-                keyIndex: mapping.keyIndex,
-                imageBase64: mapping.imageBase64,
-            })
+        for (const [hotkey, binding] of global.registeredHotkeys.entries()) {
+            hotkeys.push({ hotkey, ...binding })
         }
 
         return {
-            deviceId,
-            keyIndex,
-            imageBase64,
+            ...context,
             currentHotkeys: hotkeys,
         }
     })
@@ -395,30 +386,56 @@ export function initializeIpcHandlers() {
         }
     })
 
-    // Handle assignHotkey
-    ipcMain.handle('assignHotkey', (_event, { deviceId, keyIndex, hotkey }) => {
-        const columnCount = store.get(`device.${deviceId}.columnCount`, 8)
-        const x = keyIndex % columnCount
-        const y = Math.floor(keyIndex / columnCount)
+    // Handle assignHotkey - the payload is a HotkeyBinding plus the chosen
+    // hotkey string, covering per-key hotkeys as well as the "show/hide all"
+    // and "show/hide one device" app-level hotkeys (issue #38)
+    ipcMain.handle('assignHotkey', (_event, { hotkey, ...context }) => {
+        let success = false
 
-        // Register in hotkeys.ts
-        const success = registerHotkey(hotkey, deviceId, keyIndex)
-        if (success) {
-            // Save to store
-            const keyConfig = store.get(
-                `device.${deviceId}.keys`,
-                {}
-            ) as Record<number, { hotkey?: string }>
-            keyConfig[keyIndex] = { ...(keyConfig[keyIndex] || {}), hotkey }
-            store.set(`device.${deviceId}.keys`, keyConfig)
+        if (context.kind === 'key') {
+            const { deviceId, keyIndex } = context
+            success = registerHotkey(hotkey, deviceId, keyIndex)
+            if (success) {
+                const keyConfig = store.get(
+                    `device.${deviceId}.keys`,
+                    {}
+                ) as Record<number, { hotkey?: string }>
+                keyConfig[keyIndex] = {
+                    ...(keyConfig[keyIndex] || {}),
+                    hotkey,
+                }
+                store.set(`device.${deviceId}.keys`, keyConfig)
+            }
+        } else if (context.kind === 'toggleAll') {
+            success = registerToggleAllHotkey(hotkey)
+            if (success) {
+                store.set('appHotkeys.toggleAll', hotkey)
+            }
+        } else if (context.kind === 'toggleDevice') {
+            const { deviceId } = context
+            success = registerToggleDeviceHotkey(hotkey, deviceId)
+            if (success) {
+                store.set(`device.${deviceId}.toggleHotkey`, hotkey)
+            }
         }
 
         return success
     })
 
-    ipcMain.handle('clearHotkey', (_event, { deviceId, keyIndex, hotkey }) => {
+    ipcMain.handle('clearHotkey', (_event, { hotkey, ...context }) => {
         unregisterHotkey(hotkey)
 
+        if (context.kind === 'toggleAll') {
+            store.delete('appHotkeys.toggleAll' as any)
+            return true
+        }
+
+        if (context.kind === 'toggleDevice') {
+            store.delete(`device.${context.deviceId}.toggleHotkey` as any)
+            return true
+        }
+
+        const { deviceId, keyIndex } = context
         const keyConfig = store.get(`device.${deviceId}.keys`, {}) as Record<
             number,
             { hotkey?: string }
@@ -474,6 +491,7 @@ export function initializeIpcHandlers() {
         return deviceIds.map((id) => ({
             deviceId: id,
             name: store.get(`device.${id}.name`, 'ScreenDeck'),
+            toggleHotkey: store.get(`device.${id}.toggleHotkey`, null),
             columnCount: store.get(`device.${id}.columnCount`, 8),
             rowCount: store.get(`device.${id}.rowCount`, 4),
             bitmapSize: store.get(`device.${id}.bitmapSize`, 72),

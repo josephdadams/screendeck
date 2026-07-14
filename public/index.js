@@ -415,6 +415,7 @@ window.addEventListener('DOMContentLoaded', () => {
                 let keyConfig = keyStates.get(deviceId)?.get(keyIndex)
                 let imageBase64 = keyConfig?.imageBase64 || null
                 window.electronAPI.setHotkeyContext({
+                    kind: 'key',
                     deviceId,
                     keyIndex,
                     imageBase64,
