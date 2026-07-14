@@ -214,12 +214,18 @@ export function resizeWindowForDevice(deviceId: string) {
             deviceConfig.rowCount || 4,
             bitmapSize
         )
+        // On Windows, BrowserWindow.setBounds() can behave unreliably on
+        // resizable: false windows, sometimes only applying one axis of the
+        // resize (see #33). Temporarily allow resizing around the call as a
+        // workaround.
+        win.setResizable(true)
         win.setBounds({
             width,
             height,
             x: win.getBounds().x,
             y: win.getBounds().y,
         })
+        win.setResizable(false)
         return
     }
 
@@ -249,10 +255,16 @@ export function resizeWindowForDevice(deviceId: string) {
         `[Resize] ${deviceId}: ${visibleCols} cols x ${visibleRows} rows → ${width}x${height}`
     )
 
+    // On Windows, BrowserWindow.setBounds() can behave unreliably on
+    // resizable: false windows, sometimes only applying one axis of the
+    // resize (see #33). Temporarily allow resizing around the call as a
+    // workaround.
+    win.setResizable(true)
     win.setBounds({
         width,
         height,
         x: win.getBounds().x,
         y: win.getBounds().y,
     })
+    win.setResizable(false)
 }
