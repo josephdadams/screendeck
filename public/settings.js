@@ -74,6 +74,11 @@ window.addEventListener('DOMContentLoaded', () => {
             rightFields.style.flexDirection = 'column'
             rightFields.style.gap = '4px'
 
+            const nameInput = createInput(
+                'Name',
+                device.name || 'ScreenDeck',
+                'text'
+            )
             const columnCountInput = createInput('Columns', device.columnCount)
             const rowCountInput = createInput('Rows', device.rowCount)
             const bitmapSizeInput = createInput('Bitmap', device.bitmapSize)
@@ -140,7 +145,7 @@ window.addEventListener('DOMContentLoaded', () => {
             container.appendChild(document.createElement('hr'))
 
             // Append to leftFields
-            ;[columnCountInput, rowCountInput, bitmapSizeInput].forEach(
+            ;[nameInput, columnCountInput, rowCountInput, bitmapSizeInput].forEach(
                 (inputObj) => {
                     leftFields.appendChild(inputObj.label)
                     leftFields.appendChild(inputObj.input)
@@ -178,6 +183,7 @@ window.addEventListener('DOMContentLoaded', () => {
             saveBtn.textContent = 'Save'
             saveBtn.addEventListener('click', async () => {
                 const config = {
+                    name: nameInput.input.value,
                     columnCount: parseInt(columnCountInput.input.value, 10),
                     rowCount: parseInt(rowCountInput.input.value, 10),
                     bitmapSize: parseInt(bitmapSizeInput.input.value),
@@ -270,11 +276,11 @@ window.addEventListener('DOMContentLoaded', () => {
         return { label: container, input }
     }
 
-    function createInput(labelText, value) {
+    function createInput(labelText, value, type = 'number') {
         const label = document.createElement('label')
         label.textContent = labelText + ': '
         const input = document.createElement('input')
-        input.type = 'number'
+        input.type = type
         input.value = value
         return { label, input }
     }
