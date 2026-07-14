@@ -7,7 +7,7 @@ import { initializeDeviceIds, createSatellite } from './utils' // Import utility
 
 import { createDeviceWindows } from './device' // Import device window creation
 
-import { loadHotkeysFromStore } from './hotkeys'
+import { loadHotkeysFromStore, HotkeyBinding } from './hotkeys'
 
 declare global {
     var satelliteClient: CompanionSatelliteClient | null
@@ -25,15 +25,8 @@ declare global {
         >
     >
     var hotkeyPromptWindow: BrowserWindow | null
-    var hotkeyContext: {
-        deviceId: string
-        keyIndex: number
-        imageBase64: string
-    } | null
-    var registeredHotkeys: Map<
-        string,
-        { deviceId: string; keyIndex: number; imageBase64: string }
-    >
+    var hotkeyContext: HotkeyBinding | null
+    var registeredHotkeys: Map<string, HotkeyBinding>
     var trayParentWindow: BrowserWindow
     var settingsWindow: BrowserWindow | null
     var isQuitting: boolean

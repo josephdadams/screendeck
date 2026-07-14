@@ -10,6 +10,7 @@ import {
 import { ProfilesStore } from './types' // Import the ProfilesStore type
 
 import { unregisterAllHotkeys } from './hotkeys' // Import hotkey management functions
+import { hideAllDeviceWindows, showAllDeviceWindows } from './device'
 import { store } from './store'
 
 let tray: Tray | null = null
@@ -62,26 +63,14 @@ function updateTrayMenu() {
             label: `Hide All Screen Decks`,
             type: 'normal',
             click: () => {
-                global.deviceWindows.forEach((win, deviceId) => {
-                    if (win.isVisible()) {
-                        win.hide()
-                        store.set(`device.${deviceId}.hidden`, true)
-                    }
-                })
-                updateTrayMenu()
+                hideAllDeviceWindows()
             },
         },
         {
             label: `Show All Screen Decks`,
             type: 'normal',
             click: () => {
-                global.deviceWindows.forEach((win, deviceId) => {
-                    if (!win.isVisible()) {
-                        win.show()
-                        store.set(`device.${deviceId}.hidden`, false)
-                    }
-                })
-                updateTrayMenu()
+                showAllDeviceWindows()
             },
         },
         { type: 'separator' },

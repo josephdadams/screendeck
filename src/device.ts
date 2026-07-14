@@ -155,6 +155,58 @@ export function showWindows(ignoreHiddenState = false) {
     console.log('All device windows shown')
 }
 
+// Hide every device window, persisting the hidden state for each.
+export function hideAllDeviceWindows() {
+    global.deviceWindows.forEach((win, deviceId) => {
+        if (win.isVisible()) {
+            win.hide()
+            store.set(`device.${deviceId}.hidden`, true)
+        }
+    })
+    updateTrayMenu()
+}
+
+// Show every device window, persisting the hidden state for each.
+export function showAllDeviceWindows() {
+    global.deviceWindows.forEach((win, deviceId) => {
+        if (!win.isVisible()) {
+            win.show()
+            store.set(`device.${deviceId}.hidden`, false)
+        }
+    })
+    updateTrayMenu()
+}
+
+// Toggles all device windows based on aggregate visibility: if any window is
+// currently visible, hide all of them; otherwise show all of them. Used by
+// the "Show/Hide All" app-level hotkey (issue #38).
+export function toggleAllDeviceWindows() {
+    const anyVisible = Array.from(global.deviceWindows.values()).some((win) =>
+        win.isVisible()
+    )
+    if (anyVisible) {
+        hideAllDeviceWindows()
+    } else {
+        showAllDeviceWindows()
+    }
+}
+
+// Toggles a single device window's visibility. Used by the per-device
+// "Show/Hide" app-level hotkey (issue #38).
+export function toggleDeviceWindow(deviceId: string) {
+    const win = global.deviceWindows.get(deviceId)
+    if (!win) return
+
+    if (win.isVisible()) {
+        win.hide()
+        store.set(`device.${deviceId}.hidden`, true)
+    } else {
+        win.show()
+        store.set(`device.${deviceId}.hidden`, false)
+    }
+    updateTrayMenu()
+}
+
 // Show or hide device labels in all windows
 export function showDeviceLabels(show: boolean) {
     global.deviceWindows.forEach((win, deviceId) => {

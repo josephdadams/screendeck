@@ -4,6 +4,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
     loadCompanionSettings()
     loadDevices()
+    loadAppHotkeys()
+
+    // The hotkey-assignment prompt is a separate modal window; when it
+    // closes, focus returns here. Refresh so any newly assigned/cleared
+    // hotkey shows up without requiring a manual reopen of Settings.
+    window.addEventListener('focus', () => {
+        loadAppHotkeys()
+    })
 
     document
         .getElementById('saveCompanion')
@@ -255,6 +263,78 @@ window.addEventListener('DOMContentLoaded', () => {
             container.appendChild(actions)
             deviceList.appendChild(container)
         })
+    }
+
+    async function loadAppHotkeys() {
+        const appHotkeysContainer = document.getElementById('appHotkeys')
+        appHotkeysContainer.innerHTML = ''
+
+        const [settings, devices] = await Promise.all([
+            window.electronAPI.getSettings(),
+            window.electronAPI.getAllDevices(),
+        ])
+
+        appHotkeysContainer.appendChild(
+            createHotkeyRow(
+                'Show/Hide All Screen Decks',
+                settings.appHotkeys?.toggleAll,
+                { kind: 'toggleAll' }
+            )
+        )
+
+        devices.forEach((device) => {
+            appHotkeysContainer.appendChild(
+                createHotkeyRow(
+                    `Show/Hide ${device.name || device.deviceId}`,
+                    device.toggleHotkey,
+                    { kind: 'toggleDevice', deviceId: device.deviceId }
+                )
+            )
+        })
+    }
+
+    // Builds one "Set/Clear a global hotkey" row, reusing the same
+    // hotkey-assignment prompt window used for per-key hotkeys.
+    function createHotkeyRow(labelText, currentHotkey, context) {
+        const row = document.createElement('div')
+        row.style.display = 'flex'
+        row.style.alignItems = 'center'
+        row.style.gap = '8px'
+        row.style.marginBottom = '6px'
+
+        const label = document.createElement('span')
+        label.style.flex = '1'
+        label.textContent = labelText
+        row.appendChild(label)
+
+        const hotkeyLabel = document.createElement('span')
+        hotkeyLabel.style.fontFamily = 'monospace'
+        hotkeyLabel.style.color = currentHotkey ? '#000' : '#999'
+        hotkeyLabel.textContent = currentHotkey || 'Not set'
+        row.appendChild(hotkeyLabel)
+
+        const setBtn = document.createElement('button')
+        setBtn.textContent = currentHotkey ? 'Change' : 'Set'
+        setBtn.addEventListener('click', async () => {
+            await window.electronAPI.setHotkeyContext(context)
+            await window.electronAPI.openHotkeyPrompt()
+        })
+        row.appendChild(setBtn)
+
+        if (currentHotkey) {
+            const clearBtn = document.createElement('button')
+            clearBtn.textContent = 'Clear'
+            clearBtn.addEventListener('click', async () => {
+                await window.electronAPI.clearHotkey({
+                    ...context,
+                    hotkey: currentHotkey,
+                })
+                loadAppHotkeys()
+            })
+            row.appendChild(clearBtn)
+        }
+
+        return row
     }
 
     function createCheckbox(labelText, checked) {

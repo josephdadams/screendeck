@@ -127,6 +127,7 @@ export function createSatellite() {
         // If this key is a registered hotkey, update its bitmap reference too
         for (const [hotkey, mapping] of global.registeredHotkeys.entries()) {
             if (
+                mapping.kind === 'key' &&
                 mapping.deviceId === data.deviceId &&
                 mapping.keyIndex === data.keyIndex
             ) {
