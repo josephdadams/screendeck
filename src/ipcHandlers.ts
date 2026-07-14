@@ -445,6 +445,12 @@ export function initializeIpcHandlers() {
     // Handle assignHotkey - the payload is a HotkeyBinding plus the chosen
     // hotkey string, covering per-key hotkeys as well as the "show/hide all"
     // and "show/hide one device" app-level hotkeys (issue #38)
+    // Note: `device.<id>.keys` (plural) stores only `.hotkey` per index and is
+    // distinct from `device.<id>.key.<idx>` (singular, dot-per-field) used for
+    // isEncoder/stepSize/isSticky in getKeyConfig/updateKeyConfig above. Some
+    // older stores may have a stray `isEncoder` under `keys[idx]` left over
+    // from an earlier schema; it's never read and is preserved as-is by the
+    // spread below, not written by this handler.
     ipcMain.handle('assignHotkey', (_event, { hotkey, ...context }) => {
         let success = false
 
