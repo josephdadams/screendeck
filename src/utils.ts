@@ -72,7 +72,11 @@ export function createSatellite() {
             const deviceIds = store.get('deviceIds') as string[] | []
             for (const deviceId of deviceIds) {
                 console.log(`[Satellite] Adding device: ${deviceId}`)
-                global.satelliteClient?.addDevice(deviceId, 'ScreenDeck', {
+                const productName = store.get(
+                    `device.${deviceId}.name`,
+                    'ScreenDeck'
+                )
+                global.satelliteClient?.addDevice(deviceId, productName, {
                     columnCount: store.get(`device.${deviceId}.columnCount`, 8),
                     rowCount: store.get(`device.${deviceId}.rowCount`, 4),
                     bitmapSize: store.get(`device.${deviceId}.bitmapSize`, 72),

@@ -24,7 +24,7 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
     let needsDeviceUpdate = false
 
     // Check if key properties have actually changed
-    for (const key of ['columnCount', 'rowCount', 'bitmapSize']) {
+    for (const key of ['columnCount', 'rowCount', 'bitmapSize', 'name']) {
         const oldValue = store.get(`device.${deviceId}.${key}`)
         const newValue = config[key]
 
@@ -96,7 +96,11 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
             // If the Satellite client is connected and key properties changed, update the device config
             if (global.satelliteClient) {
                 global.satelliteClient.removeDevice(deviceId)
-                global.satelliteClient.addDevice(deviceId, 'ScreenDeck', {
+                const productName = store.get(
+                    `device.${deviceId}.name`,
+                    'ScreenDeck'
+                )
+                global.satelliteClient.addDevice(deviceId, productName, {
                     columnCount: store.get(
                         `device.${deviceId}.columnCount`,
                         8
@@ -152,6 +156,7 @@ function applyDeviceConfig(deviceId: string, config: Record<string, any>) {
 
 export function initializeIpcHandlers() {
     ipcMain.handle('getDeviceConfig', (_event, deviceId) => {
+        const name = store.get(`device.${deviceId}.name`, 'ScreenDeck')
         const columnCount = store.get(`device.${deviceId}.columnCount`, 8)
         const rowCount = store.get(`device.${deviceId}.rowCount`, 4)
         const bitmapSize = store.get(`device.${deviceId}.bitmapSize`, 72)
@@ -174,6 +179,7 @@ export function initializeIpcHandlers() {
         )
 
         return {
+            name,
             columnCount,
             rowCount,
             bitmapSize,
@@ -440,15 +446,25 @@ export function initializeIpcHandlers() {
         // Create the window
         createDeviceWindow(newDeviceId)
 
-        global.satelliteClient?.addDevice(newDeviceId, 'ScreenDeck', {
-            columnCount: store.get(`device.${newDeviceId}.columnCount`, 8),
-            rowCount: store.get(`device.${newDeviceId}.rowCount`, 4),
-            bitmapSize: store.get(`device.${newDeviceId}.bitmapSize`, 72),
-            colours: true,
-            text: true,
-            brightness: true,
-            pincodeMap: null,
-        })
+        global.satelliteClient?.addDevice(
+            newDeviceId,
+            store.get(`device.${newDeviceId}.name`, 'ScreenDeck'),
+            {
+                columnCount: store.get(
+                    `device.${newDeviceId}.columnCount`,
+                    8
+                ),
+                rowCount: store.get(`device.${newDeviceId}.rowCount`, 4),
+                bitmapSize: store.get(
+                    `device.${newDeviceId}.bitmapSize`,
+                    72
+                ),
+                colours: true,
+                text: true,
+                brightness: true,
+                pincodeMap: null,
+            }
+        )
 
         return newDeviceId
     })
@@ -457,6 +473,7 @@ export function initializeIpcHandlers() {
         const deviceIds = store.get('deviceIds', []) as string[]
         return deviceIds.map((id) => ({
             deviceId: id,
+            name: store.get(`device.${id}.name`, 'ScreenDeck'),
             columnCount: store.get(`device.${id}.columnCount`, 8),
             rowCount: store.get(`device.${id}.rowCount`, 4),
             bitmapSize: store.get(`device.${id}.bitmapSize`, 72),

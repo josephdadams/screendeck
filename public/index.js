@@ -37,10 +37,12 @@ window.addEventListener('DOMContentLoaded', () => {
     let globalDimOnLeave = false
     let globalAutoHideOnLeave = false
     let globalHideEmptyKeys = false
+    let deviceDisplayName = deviceId
 
     // Request config from main process
     window.electronAPI.getDeviceConfig(deviceId).then((config) => {
         const {
+            name,
             dimOnLeave,
             autoHide,
             hideEmptyKeys,
@@ -48,6 +50,7 @@ window.addEventListener('DOMContentLoaded', () => {
             backgroundOpacity,
         } = config
 
+        deviceDisplayName = name || deviceId
         globalDimOnLeave = dimOnLeave || false
         configureDimOnLeave(globalDimOnLeave)
         globalAutoHideOnLeave = autoHide || false
@@ -611,7 +614,7 @@ window.addEventListener('DOMContentLoaded', () => {
     window.electronAPI.onShowDeviceLabel((data) => {
         const label = document.getElementById('device-label')
         if (label) {
-            label.textContent = data.deviceId
+            label.textContent = deviceDisplayName
             label.style.display = data.show ? 'block' : 'none'
         }
     })
