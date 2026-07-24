@@ -1,6 +1,6 @@
 {
     "name": "screendeck",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "author": "Joseph Adams <joseph@josephadams.dev>",
     "description": "ScreenDeck is a virtual on-screen stream deck for Bitfocus Companion.",
     "main": "dist/main.js",
